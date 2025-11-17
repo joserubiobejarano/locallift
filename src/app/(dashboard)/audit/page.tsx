@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ type Location = {
   title: string | null;
 };
 
-export default function AuditPage() {
+function AuditPageContent() {
   const searchParams = useSearchParams();
   const isDemo = isDemoModeFromSearchParams(searchParams);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -300,6 +300,24 @@ export default function AuditPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Profile Audit</h1>
+          <p className="text-muted-foreground">
+            Analyze your local presence and get instant optimization tips.
+          </p>
+        </div>
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <AuditPageContent />
+    </Suspense>
   );
 }
 

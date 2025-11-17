@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -28,7 +28,7 @@ type Review = {
 
 };
 
-export default function ReviewsPage() {
+function ReviewsPageContent() {
   const searchParams = useSearchParams();
   const isDemo = isDemoModeFromSearchParams(searchParams);
   const { planId, isLoading: planLoading } = useCurrentPlan();
@@ -380,5 +380,20 @@ export default function ReviewsPage() {
 
   );
 
+}
+
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4 p-4">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Turn reviews into customers on autopilot</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ReviewsPageContent />
+    </Suspense>
+  );
 }
 
