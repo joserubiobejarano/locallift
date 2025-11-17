@@ -7,11 +7,22 @@ import { resolveUser } from "@/lib/user-from-req";
 import { googleFetch } from "@/lib/google";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { canUseReviewAutomation } from "@/lib/plan";
+import { getUserPlan } from "@/lib/plan-server";
 
 export async function POST(req: NextRequest) {
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Check plan gating
+  const plan = await getUserPlan(user.id);
+  if (!canUseReviewAutomation(plan)) {
+    return NextResponse.json(
+      { error: "Review automation is only available on paid plans" },
+      { status: 403 }
+    );
+  }
 
   const { locationName } = await req.json();
 

@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
 import { Textarea } from "@/components/ui/textarea";
 import { demoLocations, demoReviews } from "@/lib/demo-data";
+import { useCurrentPlan } from "@/lib/use-current-plan";
+import { canUseReviewAutomation } from "@/lib/plan";
+import { isDemoModeFromSearchParams } from "@/lib/demo";
 
 type Location = { name: string; title?: string };
 
@@ -24,6 +29,10 @@ type Review = {
 };
 
 export default function ReviewsPage() {
+  const searchParams = useSearchParams();
+  const isDemo = isDemoModeFromSearchParams(searchParams);
+  const { planId, isLoading: planLoading } = useCurrentPlan();
+  const canUseAutomation = canUseReviewAutomation(planId);
 
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -192,8 +201,18 @@ export default function ReviewsPage() {
 
   }, []);
 
+  // If demo mode is active, always use sample data
   useEffect(() => {
-    if (useSampleData && selectedLoc) {
+    if (isDemo) {
+      setUseSampleData(true);
+      if (demoLocations.length > 0 && !selectedLoc) {
+        setSelectedLoc(demoLocations[0].location_name);
+      }
+    }
+  }, [isDemo, selectedLoc]);
+
+  useEffect(() => {
+    if ((useSampleData || isDemo) && selectedLoc) {
       const demoReviewsData = demoReviews(selectedLoc);
       setReviews(demoReviewsData.map((r) => ({
         google_review_id: r.google_review_id,
@@ -202,19 +221,39 @@ export default function ReviewsPage() {
         comment: r.comment,
         status: r.status,
       })));
-    } else if (useSampleData && !selectedLoc) {
+    } else if ((useSampleData || isDemo) && !selectedLoc) {
       setReviews([]);
     }
-  }, [useSampleData, selectedLoc]);
+  }, [useSampleData, isDemo, selectedLoc]);
 
-  const displayLocations = useSampleData ? demoLocations.map((l) => ({ name: l.location_name, title: l.title })) : locations;
+  const displayLocations = (useSampleData || isDemo) ? demoLocations.map((l) => ({ name: l.location_name, title: l.title })) : locations;
   const hasRealLocations = locations.length > 0;
+
+  // Show upgrade message if not in demo mode and plan doesn't allow review automation
+  if (!isDemo && !planLoading && !canUseAutomation) {
+    return (
+      <div className="space-y-4 p-4">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Turn reviews into customers on autopilot</h1>
+          <p className="text-muted-foreground">
+            Automatically generate and post replies to your Google reviews. Save time while maintaining a professional presence that builds trust with potential customers.
+          </p>
+          <p className="text-muted-foreground mt-2">
+            This feature is available on paid plans. Upgrade to unlock review automation and start growing your business.
+          </p>
+        </div>
+        <Link href="/settings#billing">
+          <Button>Upgrade to unlock</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
 
     <div className="space-y-4 p-4">
 
-      {!hasRealLocations && !useSampleData && (
+      {!hasRealLocations && !useSampleData && !isDemo && (
         <div className="rounded-md border p-4 bg-muted/50">
           <div className="flex items-center justify-between">
             <div>
@@ -239,17 +278,17 @@ export default function ReviewsPage() {
         </div>
       )}
 
-      {useSampleData && (
+      {(useSampleData || isDemo) && (
         <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
           <p className="text-sm text-orange-800 dark:text-orange-200">
-            Demo mode - You are viewing sample data. Connect your Google account in Settings to see your real reviews.
+            Demo mode – You are viewing sample data. Connect your Google account in Settings to see your real reviews and audits.
           </p>
         </div>
       )}
 
       <div className="flex items-center gap-2">
 
-        <Button onClick={syncLocations} disabled={loading || useSampleData}>
+        <Button onClick={syncLocations} disabled={loading || useSampleData || isDemo}>
 
           Sync Locations
 
@@ -279,7 +318,7 @@ export default function ReviewsPage() {
 
         </select>
 
-        <Button onClick={syncReviews} disabled={!selectedLoc || loading || useSampleData}>
+        <Button onClick={syncReviews} disabled={!selectedLoc || loading || useSampleData || isDemo}>
 
           Sync Reviews
 
@@ -317,15 +356,15 @@ export default function ReviewsPage() {
 
             <div className="flex gap-2">
 
-              <Button variant="secondary" onClick={() => generate(rv)} disabled={useSampleData}>
+              <Button variant="secondary" onClick={() => generate(rv)} disabled={useSampleData || isDemo}>
 
                 Generate
 
               </Button>
 
-              <Button onClick={() => post(rv)} disabled={!drafts[rv.google_review_id] || useSampleData}>
+              <Button onClick={() => post(rv)} disabled={!drafts[rv.google_review_id] || useSampleData || isDemo}>
 
-                {useSampleData ? "Demo mode - reply not actually sent" : "Post to Google"}
+                {(useSampleData || isDemo) ? "Demo mode - reply not actually sent" : "Post to Google"}
 
               </Button>
 

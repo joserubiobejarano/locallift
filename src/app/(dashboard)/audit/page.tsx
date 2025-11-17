@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { demoAuditMarkdown } from "@/lib/demo-data";
+import { isDemoModeFromSearchParams } from "@/lib/demo";
 
 type Location = {
   id: string;
@@ -16,6 +18,8 @@ type Location = {
 };
 
 export default function AuditPage() {
+  const searchParams = useSearchParams();
+  const isDemo = isDemoModeFromSearchParams(searchParams);
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
   const [auditMode, setAuditMode] = useState<"connected" | "quick">("quick");
@@ -28,6 +32,11 @@ export default function AuditPage() {
   const [useSampleData, setUseSampleData] = useState(false);
 
   const loadLocations = useCallback(async () => {
+    // Never load real locations in demo mode
+    if (isDemo) {
+      return;
+    }
+
     try {
       // First try to get locations from API to ensure they're synced
       const res = await fetch("/api/google/locations");
@@ -69,13 +78,27 @@ export default function AuditPage() {
       // Silently ignore errors
       console.error("[audit] failed to load locations", e);
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => {
     loadLocations();
   }, [loadLocations]);
 
+  // If demo mode is active, automatically show sample data
+  useEffect(() => {
+    if (isDemo && !useSampleData && !result) {
+      setUseSampleData(true);
+      setResult(demoAuditMarkdown);
+      setError(null);
+    }
+  }, [isDemo, useSampleData, result]);
+
   async function runAudit(mode: "connected" | "quick") {
+    // Never run real audits in demo mode
+    if (isDemo) {
+      return;
+    }
+
     if (mode === "connected" && !selectedLocationId) {
       alert("Please select a location");
       return;
@@ -137,9 +160,17 @@ export default function AuditPage() {
         </p>
       </div>
 
+      {(isDemo || useSampleData) && (
+        <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
+          <p className="text-sm text-orange-800 dark:text-orange-200">
+            Demo mode – You are viewing sample data. Connect your Google account in Settings to see your real reviews and audits.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* Sample audit option */}
-        {locations.length === 0 && !result && !useSampleData && (
+        {locations.length === 0 && !result && !useSampleData && !isDemo && (
           <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -165,28 +196,6 @@ export default function AuditPage() {
           </Card>
         )}
 
-        {useSampleData && (
-          <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-orange-800 dark:text-orange-200">
-                Demo mode - You are viewing sample audit data. Connect your Google account in Settings to run a real audit.
-              </p>
-              {locations.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setUseSampleData(false);
-                    setResult("");
-                  }}
-                  className="text-orange-800 dark:text-orange-200"
-                >
-                  Exit demo mode
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Connected locations section */}
         <div className="space-y-3">
@@ -217,8 +226,8 @@ export default function AuditPage() {
               </div>
               <Button
                 onClick={() => runAudit("connected")}
-                disabled={loading || !selectedLocationId || useSampleData}
-                title={useSampleData ? "Exit demo mode to run a real audit" : undefined}
+                disabled={loading || !selectedLocationId || useSampleData || isDemo}
+                title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
               >
                 Run audit
               </Button>
@@ -260,8 +269,8 @@ export default function AuditPage() {
             </div>
             <Button
               onClick={() => runAudit("quick")}
-              disabled={loading || !urlOrName.trim() || useSampleData}
-              title={useSampleData ? "Exit demo mode to run a real audit" : undefined}
+              disabled={loading || !urlOrName.trim() || useSampleData || isDemo}
+              title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
             >
               Run quick audit
             </Button>

@@ -7,6 +7,8 @@ import { resolveUser } from "@/lib/user-from-req";
 import { googleFetch } from "@/lib/google";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { canUseGoogleConnection } from "@/lib/plan";
+import { getUserPlan } from "@/lib/plan-server";
 
 const LIST_URL =
   "https://mybusinessbusinessinformation.googleapis.com/v1/locations?pageSize=100&readMask=name,title,storeCode,placeId";
@@ -15,6 +17,15 @@ export async function GET(req: NextRequest) {
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Check plan gating
+  const plan = await getUserPlan(user.id);
+  if (!canUseGoogleConnection(plan)) {
+    return NextResponse.json(
+      { error: "Google connection is only available on paid plans" },
+      { status: 403 }
+    );
+  }
 
   try {
     const r = await googleFetch(user.id, LIST_URL);

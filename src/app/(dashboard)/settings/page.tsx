@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import DisconnectGoogleButton from "@/components/DisconnectGoogleButton";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import { canUseGoogleConnection, type PlanId } from "@/lib/plan";
 
 export default async function SettingsPage() {
 
@@ -48,6 +49,14 @@ export default async function SettingsPage() {
     supabase.from("gbp_locations").select("*").eq("user_id", userId).order("title"),
 
   ]);
+
+  // Determine effective plan: if subscription is active, use manual_plan, otherwise use profile.plan
+  const effectivePlan: PlanId =
+    plan?.status && (plan.status === "active" || plan.status === "trialing")
+      ? ((plan.manual_plan as PlanId) || "free")
+      : ((profile?.plan as PlanId) || "free");
+
+  const canConnectGoogle = canUseGoogleConnection(effectivePlan);
 
   return (
 
@@ -117,13 +126,26 @@ export default async function SettingsPage() {
 
           <div className="space-y-2">
 
-            <p className="text-sm text-muted-foreground">Connect your Google account to manage locations and reviews.</p>
-
-            <form action="/api/google/oauth/start" method="get">
-
-              <Button type="submit">Connect Google</Button>
-
-            </form>
+            {!canConnectGoogle ? (
+              <div className="rounded-md border p-4 space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium mb-1">Upgrade to connect Google Business Profile</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Connecting your Google account is available on paid plans.
+                  </p>
+                </div>
+                <Link href="/settings#billing">
+                  <Button>See pricing</Button>
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Connect your Google account to manage locations and reviews.</p>
+                <form action="/api/google/oauth/start" method="get">
+                  <Button type="submit">Connect Google</Button>
+                </form>
+              </>
+            )}
 
           </div>
 
