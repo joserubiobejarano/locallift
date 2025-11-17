@@ -58,7 +58,7 @@ export default function HomePage() {
       </div>
 
       {/* Header */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6 md:px-6 lg:px-8">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-6 md:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-orange-400">
             <span className="text-sm font-semibold text-slate-950">LL</span>
@@ -92,7 +92,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pb-20 pt-4 md:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pb-20 pt-4 md:px-6 lg:px-8">
         {/* HERO */}
         <section className="grid gap-10 py-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center md:py-16">
           <div>
@@ -102,15 +102,15 @@ export default function HomePage() {
               </span>
               For local businesses
             </div>
-            <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-              Win more local customers —{" "}
+            <h1 className="text-balance text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl">
+              Win more local customers,{" "}
               <span className="text-transparent bg-gradient-to-r from-orange-400 via-fuchsia-400 to-purple-400 bg-clip-text">
                 without doing more work
               </span>
             </h1>
-            <p className="mt-5 max-w-xl text-base text-slate-200/80 sm:text-lg">
+            <p className="mt-5 max-w-2xl text-lg text-slate-200/80 sm:text-xl">
               LocalLift manages your Google Business Profile for you. Automatic review
-              replies, weekly local content, and profile audits — so you show up higher
+              replies, weekly local content, and profile audits, so you show up higher
               and attract more customers.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -139,7 +139,13 @@ export default function HomePage() {
                   <p className="text-xs font-medium text-slate-400">
                     Today&apos;s reviews
                   </p>
-                  <p className="mt-1 text-2xl font-semibold">23</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-2xl font-semibold">23</p>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                  </div>
                 </div>
                 <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
                   100% replied
@@ -196,12 +202,12 @@ export default function HomePage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
               Your toolkit
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               Everything your local profile needs, handled automatically
             </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-sm text-slate-300/80 sm:text-base">
+            <p className="mt-3 max-w-3xl mx-auto text-base text-slate-300/80 sm:text-lg">
               LocalLift keeps your Google Business Profile active, accurate, and
-              customer-ready — without you spending hours inside dashboards.
+              customer-ready, without you spending hours inside dashboards.
             </p>
           </div>
 
@@ -244,13 +250,13 @@ export default function HomePage() {
         {/* PAIN / PAYOFF */}
         <section className="mt-10 grid gap-10 rounded-3xl bg-slate-900/60 px-6 py-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-10">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight">
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">
               Stop losing customers to outdated profiles
             </h2>
-            <p className="mt-4 text-sm text-slate-300/85 sm:text-base">
+            <p className="mt-4 text-base text-slate-300/85 sm:text-lg">
               When people search on Google Maps, they compare you to competitors in
               seconds. If your profile looks empty, slow, or out of date, you lose
-              them — often without knowing it.
+              them, often without knowing it.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200/80">
               <li>• People trust businesses that answer reviews quickly.</li>
@@ -292,7 +298,7 @@ export default function HomePage() {
             bullets={[
               "One clean inbox view for all your reviews",
               "Suggested replies based on your tone of voice",
-              "Send directly to Google — no copy/paste needed",
+              "Send directly to Google, no copy/paste needed",
             ]}
             variant="left"
           />
@@ -330,10 +336,10 @@ export default function HomePage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
               Testimonials
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               Trusted by local businesses that rely on Google
             </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-sm text-slate-300/80 sm:text-base">
+            <p className="mt-3 max-w-3xl mx-auto text-base text-slate-300/80 sm:text-lg">
               From busy restaurants to clinics and gyms, LocalLift helps owners keep
               their profiles sharp without staying up late replying to reviews.
             </p>
@@ -346,7 +352,7 @@ export default function HomePage() {
               location="Madrid"
               name="Marta Ruiz"
               text="Before LocalLift, I replied to reviews from my phone between orders. Now every review gets a thoughtful answer without me staying up late."
-              color="bg-orange-500/10"
+              color="bg-gradient-to-br from-orange-500/30 to-pink-500/20"
             />
 
             <TestimonialCard
@@ -355,7 +361,7 @@ export default function HomePage() {
               location="London"
               name="Dr. Alex Carter"
               text="We get a lot of anxious patients reading our reviews first. LocalLift helps us answer fast and keep the tone warm and professional."
-              color="bg-purple-500/10"
+              color="bg-gradient-to-br from-purple-500/30 to-indigo-500/20"
             />
 
             <TestimonialCard
@@ -364,7 +370,7 @@ export default function HomePage() {
               location="Barcelona"
               name="Nina López"
               text="Our team was too busy to keep the Google profile updated. Now we have fresh posts each week and reviews are always replied to."
-              color="bg-sky-500/10"
+              color="bg-gradient-to-br from-sky-500/30 to-blue-500/20"
             />
           </div>
         </section>
@@ -375,20 +381,30 @@ export default function HomePage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
               Who it&apos;s for
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               If customers find you on Google Maps, LocalLift can help
             </h2>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3 md:grid-cols-6">
-            {audience.map((item) => (
-              <div
-                key={item}
-                className="flex h-24 flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 text-center text-xs font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-900/80"
-              >
-                <span>{item}</span>
-              </div>
-            ))}
+          <div className="mt-10 grid gap-4 sm:grid-cols-3 md:grid-cols-6">
+            {audience.map((item, idx) => {
+              const colors = [
+                "from-orange-500/20 to-pink-500/20 border-orange-500/40 hover:from-orange-500/30 hover:to-pink-500/30",
+                "from-purple-500/20 to-sky-500/20 border-purple-500/40 hover:from-purple-500/30 hover:to-sky-500/30",
+                "from-emerald-500/20 to-teal-500/20 border-emerald-500/40 hover:from-emerald-500/30 hover:to-teal-500/30",
+                "from-orange-500/20 to-rose-500/20 border-orange-500/40 hover:from-orange-500/30 hover:to-rose-500/30",
+                "from-indigo-500/20 to-purple-500/20 border-indigo-500/40 hover:from-indigo-500/30 hover:to-purple-500/30",
+                "from-sky-500/20 to-blue-500/20 border-sky-500/40 hover:from-sky-500/30 hover:to-blue-500/30",
+              ];
+              return (
+                <div
+                  key={item}
+                  className={`flex h-28 flex-col items-center justify-center rounded-2xl border bg-gradient-to-br ${colors[idx % colors.length]} text-center text-sm font-semibold text-slate-100 transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer`}
+                >
+                  <span>{item}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -398,7 +414,7 @@ export default function HomePage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
               FAQ
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               Stuff people ask before they start
             </h2>
           </div>
@@ -439,12 +455,12 @@ export default function HomePage() {
 
         {/* FINAL CTA */}
         <section className="mt-4 rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-500 to-orange-400 px-6 py-10 text-center text-slate-950">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
             Ready to boost your local visibility?
           </h2>
-          <p className="mt-3 max-w-2xl mx-auto text-sm sm:text-base">
+          <p className="mt-3 max-w-3xl mx-auto text-base sm:text-lg">
             Start your free trial today and see how many more customers you can win
-            from Google — without adding more to your to-do list.
+            from Google, without adding more to your to-do list.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
@@ -465,7 +481,7 @@ export default function HomePage() {
 
       {/* Simple footer */}
       <footer className="border-t border-slate-900/60 py-6">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 text-xs text-slate-500 md:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 text-xs text-slate-500 md:px-6 lg:px-8">
           <span>© {new Date().getFullYear()} LocalLift. All rights reserved.</span>
           <div className="flex gap-4">
             <button className="hover:text-slate-300">Privacy</button>
@@ -529,38 +545,105 @@ function FeatureSplit({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
           {label}
         </p>
-        <h3 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h3 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
           {title}
         </h3>
-        <p className="mt-4 text-sm text-slate-300/85 sm:text-base">
+        <p className="mt-4 text-base text-slate-300/85 sm:text-lg">
           {description}
         </p>
-        <ul className="mt-5 space-y-2 text-xs text-slate-200/85 sm:text-sm">
+        <ul className="mt-5 space-y-2 text-sm text-slate-200/85 sm:text-base">
           {bullets.map((b) => (
             <li key={b}>• {b}</li>
           ))}
         </ul>
       </div>
       <div className={isLeft ? "" : "md:order-1"}>
-        <div className="relative h-full rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="h-3 w-16 rounded-full bg-slate-700/80" />
+        <div className="relative h-full min-h-[300px] rounded-3xl border border-slate-800 bg-slate-900/70 p-6 overflow-hidden">
+          {/* Window header */}
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex gap-2">
+              <div className="h-3 w-3 rounded-full bg-slate-700/80" />
+              <div className="h-3 w-3 rounded-full bg-slate-700/80" />
+              <div className="h-3 w-3 rounded-full bg-slate-700/80" />
+            </div>
+            <div className="h-2 w-24 rounded-full bg-gradient-to-r from-purple-500/30 via-sky-500/30 to-orange-400/30" />
             <div className="flex gap-1">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
               <span className="h-2 w-2 rounded-full bg-amber-400" />
               <span className="h-2 w-2 rounded-full bg-rose-400" />
             </div>
           </div>
-          <div className="space-y-3">
-            <div className="h-3 w-2/3 rounded-full bg-slate-700/80" />
-            <div className="h-3 w-1/2 rounded-full bg-slate-800/80" />
-            <div className="h-28 rounded-2xl bg-gradient-to-br from-purple-500/10 via-sky-500/10 to-orange-400/10" />
-            <div className="grid grid-cols-3 gap-3">
-              <div className="h-10 rounded-xl bg-slate-800/80" />
-              <div className="h-10 rounded-xl bg-slate-800/80" />
-              <div className="h-10 rounded-xl bg-slate-800/80" />
-            </div>
+          
+          {/* Content area with icons/graphics */}
+          <div className="space-y-4">
+            {/* Feature-specific graphics */}
+            {label.toLowerCase().includes("review") && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-sky-500/20 p-3 border border-purple-500/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-sky-400 text-white text-xs font-bold">5★</div>
+                  <div className="flex-1">
+                    <div className="h-2 w-full rounded-full bg-purple-500/40 mb-2" />
+                    <div className="h-2 w-3/4 rounded-full bg-purple-400/30" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-orange-500/20 to-pink-500/20 p-3 border border-orange-500/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-pink-400 text-white text-xs font-bold">4★</div>
+                  <div className="flex-1">
+                    <div className="h-2 w-full rounded-full bg-orange-500/40 mb-2" />
+                    <div className="h-2 w-2/3 rounded-full bg-orange-400/30" />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {label.toLowerCase().includes("content") && (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-500/20 p-4 border border-orange-500/30">
+                  <div className="h-3 w-3/4 rounded-full bg-orange-400/50 mb-2" />
+                  <div className="h-3 w-full rounded-full bg-pink-400/40 mb-2" />
+                  <div className="h-3 w-2/3 rounded-full bg-purple-400/30" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg bg-gradient-to-br from-orange-500/15 to-pink-500/15 p-3 border border-orange-500/20">
+                    <div className="h-2 w-full rounded-full bg-orange-400/40 mb-1" />
+                    <div className="h-2 w-2/3 rounded-full bg-pink-400/30" />
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-purple-500/15 to-sky-500/15 p-3 border border-purple-500/20">
+                    <div className="h-2 w-full rounded-full bg-purple-400/40 mb-1" />
+                    <div className="h-2 w-3/4 rounded-full bg-sky-400/30" />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {label.toLowerCase().includes("audit") && (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-sky-500/20 p-4 border border-emerald-500/30">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/40 flex items-center justify-center">
+                      <div className="h-4 w-4 rounded border-2 border-emerald-400 border-t-transparent" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-2 w-full rounded-full bg-emerald-400/50 mb-1" />
+                      <div className="h-2 w-2/3 rounded-full bg-teal-400/40" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="h-8 rounded bg-emerald-500/30" />
+                    <div className="h-8 rounded bg-teal-500/30" />
+                    <div className="h-8 rounded bg-sky-500/30" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <div className="h-2 flex-1 rounded-full bg-emerald-500/30" />
+                </div>
+              </div>
+            )}
           </div>
+          
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-500/5 pointer-events-none" />
         </div>
       </div>
     </div>
@@ -586,23 +669,23 @@ function TestimonialCard({
 }: TestimonialCardProps) {
   return (
     <div
-      className={`flex flex-col justify-between rounded-3xl border border-slate-800 ${color} p-6 text-slate-900`}
+      className={`flex flex-col justify-between rounded-3xl border border-slate-800 ${color} p-6 text-slate-50 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 hover:border-slate-700 cursor-pointer`}
     >
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-800/80">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-200/90">
           {business}
         </p>
-        <p className="mt-3 text-sm text-slate-900/90">{text}</p>
+        <p className="mt-3 text-sm text-slate-100 leading-relaxed sm:text-base">{text}</p>
       </div>
       <div className="mt-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/10 text-xs font-semibold">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50/20 text-xs font-semibold text-slate-50 backdrop-blur-sm">
           {name
             .split(" ")
             .map((n) => n[0])
             .join("")}
         </div>
-        <div className="text-xs text-slate-800/90">
-          <p className="font-semibold">{name}</p>
+        <div className="text-xs text-slate-200/90 sm:text-sm">
+          <p className="font-semibold text-slate-50">{name}</p>
           <p>
             {role} · {location}
           </p>
