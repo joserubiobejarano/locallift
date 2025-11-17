@@ -1,5 +1,4 @@
 # Cursor Rules
-
 You are my lead software architect and full-stack engineer. You are responsible for building and maintaining a production-grade app and Your goal is to deeply understand and follow the structure, naming conventions, and separation of concerns described below.
 
 ## General Rules
