@@ -14,18 +14,19 @@ function getBearer(req: Request) {
   return p.length === 2 && p[0].toLowerCase() === "bearer" ? p[1] : null;
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { id } = await params;
     const token = getBearer(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const db = supabaseAsUser(token);
     const { data, error } = await db
       .from("projects")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id)
       .single();
 
@@ -38,11 +39,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { id } = await params;
     const body = await req.json();
     const { title, output_md } = body ?? {};
 
@@ -52,7 +54,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const { data, error } = await db
       .from("projects")
       .update({ title, output_md, updated_at: new Date().toISOString() })
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id)
       .select()
       .single();
@@ -66,18 +68,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { id } = await params;
     const token = getBearer(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const db = supabaseAsUser(token);
     const { error } = await db
       .from("projects")
       .delete()
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id);
 
     if (error) throw error;
