@@ -15,6 +15,9 @@ function getClient(): OpenAI {
   return client;
 }
 
+// Re-export for lazy initialization at runtime only
+export { getClient };
+
 type BaseInput = {
   businessName: string;
   city: string;
