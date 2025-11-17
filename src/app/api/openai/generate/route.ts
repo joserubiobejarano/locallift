@@ -4,6 +4,9 @@ import { z } from "zod";
 import { generateBlog, generateGBPPost, generateFAQs } from "@/lib/openai";
 import { resolveUser } from "@/lib/user-from-req";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const InputSchema = z.object({
   type: z.enum(["blog", "gbp_post", "faq"]),
   businessName: z.string().min(1),

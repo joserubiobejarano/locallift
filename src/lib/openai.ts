@@ -1,8 +1,19 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!client) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing credentials. Please pass an 'apiKey', or set the 'OPENAI_API_KEY' environment variable.");
+    }
+    client = new OpenAI({
+      apiKey,
+    });
+  }
+  return client;
+}
 
 type BaseInput = {
   businessName: string;
@@ -21,7 +32,7 @@ Tone: ${input.tone}
 
 Write an 800–1200 word blog post targeting local search intent with 3–5 specific local references (neighborhoods, landmarks, seasonal events). Include practical tips and avoid fluff. Output Markdown only.`;
 
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: system },
@@ -42,7 +53,7 @@ Tone: ${input.tone}
 
 Write a 120–200 word GBP post announcing value for local customers (offer, tip, event, update). Include a clear CTA ("Call us", "Book now"). Output Markdown only.`;
 
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: system },
@@ -63,7 +74,7 @@ Tone: ${input.tone}
 
 Write 6–10 FAQs customers in ${input.city} often ask about ${input.service}. Make them locally relevant. Output Markdown only.`;
 
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: system },
@@ -90,7 +101,7 @@ Review text: ${input.text}
 
 Write one reply (<120 words). Output plain text only.`;
 
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: system },
@@ -145,7 +156,7 @@ export async function generateProfileAudit(input: ProfileAuditInput): Promise<st
   userMessage += `4–6 concrete image ideas that would improve the profile.\n\n`;
   userMessage += `Output Markdown only.`;
 
-  const res = await client.chat.completions.create({
+  const res = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: system },
