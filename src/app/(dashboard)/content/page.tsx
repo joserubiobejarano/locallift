@@ -37,14 +37,15 @@ export default function ContentPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const generatorOptions = useMemo(
-    () => [
-      { value: "blog", label: "Blog" },
-      { value: "gbp_post", label: "GBP Post" },
-      { value: "faq", label: "FAQs" },
-    ],
-    []
-  );
+  const generatorOptions: Array<{ value: GeneratorType; label: string }> =
+    useMemo(
+      () => [
+        { value: "blog", label: "Blog" },
+        { value: "gbp_post", label: "GBP Post" },
+        { value: "faq", label: "FAQs" },
+      ],
+      []
+    );
 
   const loadProjects = useCallback(async () => {
     try {

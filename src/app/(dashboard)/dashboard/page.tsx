@@ -13,6 +13,11 @@ type SummaryData = {
   locationsCount: number;
 };
 
+type DisplaySummary = SummaryData & {
+  averageRating?: number;
+  profileFixes?: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<SummaryData | null>(null);
@@ -84,7 +89,7 @@ export default function DashboardPage() {
 
       {!loading && !error && summary && (() => {
         const showDemo = summary.projectsCount === 0 && summary.reviewsCount === 0 && summary.locationsCount === 0;
-        const displaySummary = showDemo
+        const displaySummary: DisplaySummary = showDemo
           ? { projectsCount: 12, reviewsCount: 24, locationsCount: 3, averageRating: 4.7, profileFixes: 3 }
           : summary;
 

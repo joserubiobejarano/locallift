@@ -1,19 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import SignOutButton from "@/components/SignOutButton";
+
+function DemoBanner() {
+  const searchParams = useSearchParams();
+  const isDemo = searchParams?.get("demo") === "1";
+
+  if (!isDemo) return null;
+
+  return (
+    <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
+      <p className="text-sm text-orange-800 dark:text-orange-200">
+        You are viewing LocalLift with sample data. Connect your Google account in Settings to see your own reviews.
+      </p>
+    </div>
+  );
+}
 
 export default function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const searchParams = useSearchParams();
-  const isDemo = searchParams?.get("demo") === "1";
-
   return (
     <div className="min-h-dvh grid grid-cols-[220px_1fr]">
       <aside className="border-r p-4 space-y-3">
@@ -38,13 +50,9 @@ export default function DashboardLayout({
         <SignOutButton />
       </aside>
       <main className="p-6">
-        {isDemo && (
-          <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
-            <p className="text-sm text-orange-800 dark:text-orange-200">
-              You are viewing LocalLift with sample data. Connect your Google account in Settings to see your own reviews.
-            </p>
-          </div>
-        )}
+        <Suspense fallback={null}>
+          <DemoBanner />
+        </Suspense>
         {children}
       </main>
     </div>

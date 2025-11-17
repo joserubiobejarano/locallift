@@ -11,9 +11,10 @@ export async function POST(req: NextRequest) {
     const { access_token, refresh_token } = await req.json();
 
     if (!access_token || !refresh_token) {
-      res.headers.set("content-type", "application/json");
-      res.body = JSON.stringify({ ok: false, error: "Missing tokens" }) as any;
-      return new Response(res.body, { status: 400, headers: res.headers });
+      return new Response(JSON.stringify({ ok: false, error: "Missing tokens" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const { error } = await supabase.auth.setSession({ access_token, refresh_token });
