@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { demoLocations, demoReviews } from "@/lib/demo-data";
 import { useCurrentPlan } from "@/lib/use-current-plan";
-import { canUseReviewAutomation } from "@/lib/plan";
+import { canUseReviewAutomation, isPaidUser, isTrialing } from "@/lib/plan";
 import { isDemoModeFromSearchParams } from "@/lib/demo";
+import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
 
 type Location = { name: string; title?: string };
 
@@ -31,8 +32,10 @@ type Review = {
 function ReviewsPageContent() {
   const searchParams = useSearchParams();
   const isDemo = isDemoModeFromSearchParams(searchParams);
-  const { planId, isLoading: planLoading } = useCurrentPlan();
+  const { planId, planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
   const canUseAutomation = canUseReviewAutomation(planId);
+  const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -230,7 +233,7 @@ function ReviewsPageContent() {
   const hasRealLocations = locations.length > 0;
 
   // Show upgrade message if not in demo mode and plan doesn't allow review automation
-  if (!isDemo && !planLoading && !canUseAutomation) {
+  if (!isDemo && !planLoading && !hasPaidAccess) {
     return (
       <div className="space-y-4 p-4">
         <div>
@@ -238,12 +241,12 @@ function ReviewsPageContent() {
           <p className="text-muted-foreground">
             Automatically generate and post replies to your Google reviews. Save time while maintaining a professional presence that builds trust with potential customers.
           </p>
-          <p className="text-muted-foreground mt-2">
-            This feature is available on paid plans. Upgrade to unlock review automation and start growing your business.
-          </p>
         </div>
+        {planInfo && (
+          <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
+        )}
         <Link href="/settings#billing">
-          <Button>Upgrade to unlock</Button>
+          <Button>Upgrade to LocalLift Starter ($14.99/mo)</Button>
         </Link>
       </div>
     );
@@ -286,9 +289,23 @@ function ReviewsPageContent() {
         </div>
       )}
 
+      {planInfo && hasPaidAccess && (
+        <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
+      )}
+
       <div className="flex items-center gap-2">
 
-        <Button onClick={syncLocations} disabled={loading || useSampleData || isDemo}>
+        <Button 
+          onClick={() => {
+            if (!hasPaidAccess && !isDemo) {
+              setShowUpgradeModal(true);
+              return;
+            }
+            syncLocations();
+          }} 
+          disabled={loading || useSampleData || isDemo}
+          title={!hasPaidAccess && !isDemo ? "Premium feature" : undefined}
+        >
 
           Sync Locations
 
@@ -318,7 +335,17 @@ function ReviewsPageContent() {
 
         </select>
 
-        <Button onClick={syncReviews} disabled={!selectedLoc || loading || useSampleData || isDemo}>
+        <Button 
+          onClick={() => {
+            if (!hasPaidAccess && !isDemo) {
+              setShowUpgradeModal(true);
+              return;
+            }
+            syncReviews();
+          }} 
+          disabled={!selectedLoc || loading || useSampleData || isDemo}
+          title={!hasPaidAccess && !isDemo ? "Premium feature" : undefined}
+        >
 
           Sync Reviews
 
@@ -356,13 +383,34 @@ function ReviewsPageContent() {
 
             <div className="flex gap-2">
 
-              <Button variant="secondary" onClick={() => generate(rv)} disabled={useSampleData || isDemo}>
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  if (!hasPaidAccess && !isDemo) {
+                    setShowUpgradeModal(true);
+                    return;
+                  }
+                  generate(rv);
+                }} 
+                disabled={useSampleData || isDemo}
+                title={!hasPaidAccess && !isDemo ? "Premium feature" : undefined}
+              >
 
                 Generate
 
               </Button>
 
-              <Button onClick={() => post(rv)} disabled={!drafts[rv.google_review_id] || useSampleData || isDemo}>
+              <Button 
+                onClick={() => {
+                  if (!hasPaidAccess && !isDemo) {
+                    setShowUpgradeModal(true);
+                    return;
+                  }
+                  post(rv);
+                }} 
+                disabled={!drafts[rv.google_review_id] || useSampleData || isDemo}
+                title={!hasPaidAccess && !isDemo ? "Premium feature" : undefined}
+              >
 
                 {(useSampleData || isDemo) ? "Demo mode - reply not actually sent" : "Post to Google"}
 
@@ -375,6 +423,12 @@ function ReviewsPageContent() {
         ))}
 
       </div>
+
+      <PlanGateModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        featureName="Review automation and Google Business Profile sync"
+      />
 
     </div>
 

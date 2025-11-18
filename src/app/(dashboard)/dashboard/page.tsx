@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ensureBrowserToken } from "@/lib/ensure-token";
+import { useCurrentPlan } from "@/lib/use-current-plan";
+import { isPaidUser, isTrialing } from "@/lib/plan";
 
 type SummaryData = {
   projectsCount: number;
@@ -20,6 +22,8 @@ type DisplaySummary = SummaryData & {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { planInfo, planStatus, isLoading: planLoading } = useCurrentPlan();
+  const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,6 +154,48 @@ export default function DashboardPage() {
                 <p className="text-sm text-blue-800 dark:text-blue-200">
                   Showing a sample snapshot. Connect your Google Business Profile to see real numbers.
                 </p>
+              </div>
+            )}
+
+            {hasPaidAccess && planInfo && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Local SEO Posts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-semibold">
+                      {planInfo.aiPostsUsed} / 20
+                    </div>
+                    <CardDescription className="mt-2">
+                      Posts used this month
+                      {planInfo.usageResetDate && (
+                        <span className="block text-xs mt-1">
+                          Resets on {new Date(planInfo.usageResetDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Full Audits</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-semibold">
+                      {planInfo.auditsUsed} / 5
+                    </div>
+                    <CardDescription className="mt-2">
+                      Audits used this month
+                      {planInfo.usageResetDate && (
+                        <span className="block text-xs mt-1">
+                          Resets on {new Date(planInfo.usageResetDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
               </div>
             )}
 

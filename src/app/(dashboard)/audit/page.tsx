@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { demoAuditMarkdown } from "@/lib/demo-data";
 import { isDemoModeFromSearchParams } from "@/lib/demo";
+import { useCurrentPlan } from "@/lib/use-current-plan";
+import { isPaidUser, isTrialing } from "@/lib/plan";
+import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
 
 type Location = {
   id: string;
@@ -20,6 +24,9 @@ type Location = {
 function AuditPageContent() {
   const searchParams = useSearchParams();
   const isDemo = isDemoModeFromSearchParams(searchParams);
+  const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
+  const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
   const [auditMode, setAuditMode] = useState<"connected" | "quick">("quick");
@@ -99,6 +106,12 @@ function AuditPageContent() {
       return;
     }
 
+    // Check plan access for connected mode (quick mode is free via /free-audit)
+    if (mode === "connected" && !hasPaidAccess) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     if (mode === "connected" && !selectedLocationId) {
       alert("Please select a location");
       return;
@@ -168,6 +181,21 @@ function AuditPageContent() {
         </div>
       )}
 
+      {planInfo && hasPaidAccess && (
+        <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
+      )}
+
+      {!planLoading && !hasPaidAccess && !isDemo && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 space-y-2">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+            Upgrade to LocalLift Starter to unlock full audits with Google Business Profile connection.
+          </p>
+          <p className="text-xs text-amber-800 dark:text-amber-200">
+            You can still run quick audits without a connection. For a free audit, visit <Link href="/free-audit" className="underline">/free-audit</Link>.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* Sample audit option */}
         {locations.length === 0 && !result && !useSampleData && !isDemo && (
@@ -226,8 +254,12 @@ function AuditPageContent() {
               </div>
               <Button
                 onClick={() => runAudit("connected")}
-                disabled={loading || !selectedLocationId || useSampleData || isDemo}
-                title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
+                disabled={loading || !selectedLocationId || useSampleData || isDemo || (!hasPaidAccess && !isDemo)}
+                title={
+                  (useSampleData || isDemo) 
+                    ? "Exit demo mode to run a real audit" 
+                    : (!hasPaidAccess ? "Premium feature" : undefined)
+                }
               >
                 Run audit
               </Button>
@@ -267,13 +299,18 @@ function AuditPageContent() {
                 />
               </div>
             </div>
-            <Button
-              onClick={() => runAudit("quick")}
-              disabled={loading || !urlOrName.trim() || useSampleData || isDemo}
-              title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
-            >
-              Run quick audit
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => runAudit("quick")}
+                disabled={loading || !urlOrName.trim() || useSampleData || isDemo}
+                title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
+              >
+                Run quick audit
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Or try our <Link href="/free-audit" className="underline">free audit tool</Link> (no login required)
+              </p>
+            </div>
           </div>
         </div>
 
@@ -299,6 +336,12 @@ function AuditPageContent() {
           </div>
         )}
       </div>
+
+      <PlanGateModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        featureName="Full profile audits with Google Business Profile connection"
+      />
     </div>
   );
 }

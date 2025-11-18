@@ -9,6 +9,7 @@ import {
   generateProfileAudit,
   type ProfileAuditInput,
 } from "@/lib/openai";
+import { checkUsageLimit, incrementUsage } from "@/lib/usage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,6 +31,20 @@ export async function POST(req: NextRequest) {
     // Auth rules: connected mode requires user, quick mode does not
     if (mode === "connected" && !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check usage limits for connected mode (quick mode is free via /free-audit)
+    if (mode === "connected" && user) {
+      const usage = await checkUsageLimit(user.id, "audits");
+      if (!usage.allowed) {
+        return NextResponse.json(
+          {
+            error: "Monthly limit reached",
+            message: `You've reached your monthly limit of ${usage.limit} full audits. Your usage will reset on ${usage.resetDate || "the next billing cycle"}.`,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     let input: ProfileAuditInput;
@@ -114,6 +129,11 @@ export async function POST(req: NextRequest) {
     }
 
     const markdown = await generateProfileAudit(input);
+
+    // Increment usage for connected mode
+    if (mode === "connected" && user) {
+      await incrementUsage(user.id, "audits");
+    }
 
     return NextResponse.json({ markdown });
   } catch (err: any) {

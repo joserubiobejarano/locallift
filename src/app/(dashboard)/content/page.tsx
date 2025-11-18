@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { ensureBrowserToken } from "@/lib/ensure-token";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useCurrentPlan } from "@/lib/use-current-plan";
+import { isPaidUser, isTrialing } from "@/lib/plan";
+import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
 
 type GeneratorType = "blog" | "gbp_post" | "faq";
 
@@ -27,6 +30,9 @@ type Project = {
 };
 
 export default function ContentPage() {
+  const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
+  const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [type, setType] = useState<GeneratorType>("blog");
   const [businessName, setBusinessName] = useState("");
   const [city, setCity] = useState("");
@@ -81,6 +87,11 @@ export default function ContentPage() {
 
   async function onGenerate() {
     if (disableGenerate) return;
+
+    if (!hasPaidAccess) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     const t = await ensureBrowserToken();
     setLoading(true);
@@ -188,6 +199,18 @@ export default function ContentPage() {
           </p>
         </div>
 
+        {planInfo && hasPaidAccess && (
+          <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
+        )}
+
+        {!planLoading && !hasPaidAccess && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 space-y-2">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              Upgrade to LocalLift Starter to generate Local SEO content.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2">
           {generatorOptions.map((option) => (
             <Button
@@ -227,7 +250,11 @@ export default function ContentPage() {
           />
 
           <div className="flex flex-wrap gap-3">
-            <Button onClick={onGenerate} disabled={disableGenerate}>
+            <Button 
+              onClick={onGenerate} 
+              disabled={disableGenerate || (!hasPaidAccess && !planLoading)}
+              title={!hasPaidAccess ? "Premium feature" : undefined}
+            >
               {loading ? "Generating..." : "Generate"}
             </Button>
             <Button
@@ -284,6 +311,12 @@ export default function ContentPage() {
           )}
         </div>
       </aside>
+
+      <PlanGateModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        featureName="Local SEO content generation"
+      />
     </div>
   );
 }

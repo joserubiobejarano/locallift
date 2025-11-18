@@ -4,37 +4,39 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 1: "Manual but Powerful" MVP ✅ In Progress
+## Phase 1: Monetization (NOW) ✅ Complete
 
-**Goal**: Create a valuable product that works without any GBP connection, allowing immediate user value.
+**Goal**: Implement single $14.99/mo plan with Stripe integration, plan gating, and foundation for growth.
 
-### Status: ~60% Complete
+### Status: ✅ Complete
 
-### 1.1. Clean UX Around Existing Features ✅
+### 1.1. Stripe Subscription Plan ✅
 
 **Completed:**
-- ✅ Sign up/login (email + Google OAuth)
-- ✅ Dashboard shell (Overview/Content/Reviews/Settings)
-- ✅ Content generator (blog / GBP post / FAQ)
-- ✅ Manual review reply generator
+- ✅ Single "LocalLift Starter" plan at $14.99/month
+- ✅ 7-day free trial implementation
+- ✅ Stripe checkout integration with price ID from environment
+- ✅ Webhook handling for checkout.session.completed and customer.subscription.updated
+- ✅ Database fields: plan_type, plan_status, plan_current_period_end
+- ✅ Helper functions: isPaidUser(), isTrialing(), isFreeUser()
+- ✅ Plan status recognition: active | trialing | past_due | canceled
 
-**In Progress:**
-- 🚧 Polish content generator prompts to emphasize local angle (city, neighborhood, landmarks)
-- 🚧 Add "Topic / angle" field for more specific content requests
-  - Example: "What's the piece about?" → "Summer dinners on a terrace in Brooklyn"
-
-**Remaining:**
-- ⏳ Polish manual review replies interface
-  - Add platform selector (Google, TripAdvisor, Yelp, "Other")
-  - Improve review text paste interface
-  - Add "Copy reply" button for easy manual posting
-  - Save replies as `review_reply` drafts in database
-
-**Expected Outcome**: Users can generate local SEO content and reply to reviews without any integrations.
+**Expected Outcome**: Users can subscribe to LocalLift Starter with automatic subscription management.
 
 ---
 
-### 1.2. Profile Audit Feature ⏳ Not Started
+### 1.2. Plan Gating Across App ✅
+
+**Completed:**
+- ✅ Full plan gating on /reviews page (Google connection, sync, reply posting)
+- ✅ Full plan gating on /audit page (connected mode audits)
+- ✅ Full plan gating on /content page (content generation)
+- ✅ Plan gating on Google OAuth routes and API endpoints
+- ✅ Upgrade banners and modals for free users
+- ✅ Trial end date display for trialing users
+- ✅ Demo mode still works with sample data
+
+**Expected Outcome**: Free users see upgrade prompts, paid/trialing users have full access.
 
 **Goal**: Help users optimize their Google Business Profile with AI-powered suggestions.
 
@@ -85,7 +87,17 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-### 1.3. Marketing Homepage & Onboarding ⏳ Not Started
+### 1.3. Free Audit Landing Page ✅
+
+**Completed:**
+- ✅ Standalone /free-audit page (no login required)
+- ✅ Form fields: business name/URL, city, category, email
+- ✅ Uses existing quick audit function (openai.generateProfileAudit)
+- ✅ Stores leads in Supabase "leads" table
+- ✅ Beautiful visual report with score (colored), indicators, priorities
+- ✅ CTA: "Want ongoing optimization? Try LocalLift Starter ($14.99/mo)"
+
+**Expected Outcome**: Prospects can try the product without signing up, generating leads.
 
 **Goal**: Professional landing page and smooth onboarding flow.
 
@@ -106,7 +118,59 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 2: Google Business Profile Wiring 🚧 Partial
+## Phase 2: Product Value ✅ Complete
+
+**Goal**: Enhance product value with local SEO agent, usage limits, and analytics.
+
+### Status: ✅ Complete
+
+### 2.1. Local SEO AI Agent ✅
+
+**Completed:**
+- ✅ Created src/lib/agents/localSeoAgent.ts
+- ✅ System prompt includes business name, city, category, tone
+- ✅ Knowledge of city neighborhoods, landmarks, local culture
+- ✅ generateLocalContent() function for business-specific content
+- ✅ Updated /content page to use local SEO agent instead of generic ChatGPT
+
+**Expected Outcome**: Content is less generic and more business-specific with local references.
+
+### 2.2. Monthly Usage Limits ✅
+
+**Completed:**
+- ✅ Usage tracking: ai_posts_used, audits_used, usage_reset_date
+- ✅ Limits for LocalLift Starter: 20 posts/month, 5 audits/month
+- ✅ Unlimited review replies
+- ✅ Usage reset logic on monthly cycle
+- ✅ Usage display on /dashboard
+- ✅ Limit checking before generation with error messages
+
+**Expected Outcome**: Users see their usage and are prevented from exceeding limits.
+
+---
+
+## Phase 3: Foundation ✅ Complete
+
+**Goal**: Legal pages, contact, and feedback infrastructure.
+
+### Status: ✅ Complete
+
+### 3.1. Legal Pages ✅
+
+**Completed:**
+- ✅ /contact page
+- ✅ /privacy page
+- ✅ /terms page
+- ✅ /legal page
+- ✅ /feedback page with form submission
+- ✅ Feedback table in Supabase
+- ✅ Footer component with links to all pages
+
+**Expected Outcome**: Professional legal foundation and user feedback collection.
+
+---
+
+## Phase 4: Google Business Profile Wiring 🚧 Partial
 
 **Goal**: Make Google integration fully functional (behind feature flag if needed).
 
@@ -143,7 +207,7 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 3: Automation & n8n 🔮 Future
+## Phase 7: Automation & n8n 🔮 Future
 
 **Goal**: Automated workflows that run in the background.
 
@@ -203,7 +267,31 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 4: Analytics, Reporting & Agency Mode 🔮 Future
+### 6.1. Scheduled Posts (n8n)
+- Automated content scheduling
+- Integration with n8n workflows
+
+### 6.2. Rank Tracking
+- Track local search rankings
+- Competitor analysis
+
+### 6.3. Competitor Insights
+- Compare with competitors
+- Identify opportunities
+
+### 6.4. Multi-Location
+- Support for multiple business locations
+- Centralized management
+
+### 6.5. GBP Change Protection
+- Monitor for unauthorized changes
+- Alert system
+
+**Expected Outcome**: Advanced features for power users and agencies.
+
+---
+
+## Phase 7: Automation & n8n 🔮 Future
 
 **Goal**: Provide insights and support agency workflows.
 
@@ -249,69 +337,28 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 5: Stripe & Pricing 💰 Future
+## Phase 5: Pre-Launch 🔮 Future
 
-**Goal**: Implement usage limits and paid tiers.
+**Goal**: Full GBP testing, error logging, performance checks.
 
 **Prerequisites**: Core features stable and valuable.
 
-### 5.1. Pricing Tiers (Proposed)
+### 5.1. Full GBP Testing
+- End-to-end testing with real Google Business Profile
+- Test all sync flows
+- Verify webhook reliability
 
-**Free:**
-- 10 content generations/month
-- 10 review replies/month
-- 1 business profile
-- Manual review entry only
+### 5.2. Error Logging
+- Comprehensive error tracking
+- User-friendly error messages
+- Error reporting system
 
-**Starter ($29/month):**
-- 100 content generations
-- 100 review replies
-- 1-2 business profiles
-- Google Business Profile sync
-- Profile audit (3/month)
+### 5.3. Performance Checks
+- Load testing
+- Database optimization
+- API response time monitoring
 
-**Pro ($79/month):**
-- 500 content generations
-- 500 review replies
-- Up to 5 business profiles
-- Google Business Profile sync
-- Profile audit (unlimited)
-- **Automation features** (auto-sync, auto-reply to positive reviews)
-- Email notifications
-
-**Agency (Custom):**
-- Everything in Pro
-- Unlimited profiles
-- Multi-user support
-- White-label options
-- Priority support
-
-### 5.2. Implementation
-
-**Database:**
-- Create `user_usage` table:
-  - `user_id`, `month`, `content_generations`, `review_replies`, `audits_run`
-- Track usage on each API call
-
-**API Changes:**
-- Check limits before processing requests
-- Return appropriate error messages when limits exceeded
-- Show upgrade prompts in UI
-
-**Stripe Integration:**
-- ✅ Checkout flow (exists, needs polish)
-- ✅ Webhook handling (exists, needs testing)
-- ⏳ Subscription management UI
-- ⏳ Usage dashboard
-- ⏳ Upgrade/downgrade flows
-
-**UI:**
-- Usage meters on dashboard
-- "You've hit your limit – upgrade to X" banners
-- Upgrade CTAs in relevant places
-- Billing portal access
-
-**Expected Outcome**: Sustainable business model with clear upgrade paths.
+**Expected Outcome**: Production-ready system with monitoring and reliability.
 
 ---
 
@@ -482,6 +529,6 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-**Last Updated**: [Date]
-**Current Focus**: Phase 1.2 - Profile Audit Feature
+**Last Updated**: November 18, 2025
+**Current Focus**: Phase 4 - Google Business Profile Wiring (70% Complete)
 

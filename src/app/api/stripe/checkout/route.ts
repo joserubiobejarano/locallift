@@ -6,9 +6,9 @@ import { getServerAppUrl } from "@/lib/env";
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const priceId = String(formData.get("priceId") ?? "");
-    if (!priceId) return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
+    // Use LocalLift Starter price ID from environment
+    const priceId = process.env.STRIPE_STARTER_PRICE_ID;
+    if (!priceId) return NextResponse.json({ error: "Stripe price ID not configured" }, { status: 500 });
 
     const appUrl = getServerAppUrl();
 
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         metadata: { user_id: session.user.id },
+        trial_period_days: 7, // 7-day free trial
       },
       success_url: `${appUrl}/settings?success=1`,
       cancel_url: `${appUrl}/settings?canceled=1`,
