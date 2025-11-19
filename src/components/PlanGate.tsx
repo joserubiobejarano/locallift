@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+// Re-export UpgradeBanner for convenience
+export { UpgradeBanner };
+
 type PlanGateProps = {
   children: ReactNode;
   fallback?: ReactNode;

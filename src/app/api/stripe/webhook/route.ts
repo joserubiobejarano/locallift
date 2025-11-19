@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const user_id = mapping.user_id as string;
 
         // Get subscription details
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
         const price_id = subscription.items?.data?.[0]?.price?.id ?? null;
         const current_period_end = subscription.current_period_end
           ? new Date(subscription.current_period_end * 1000).toISOString()

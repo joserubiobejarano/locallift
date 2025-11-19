@@ -71,10 +71,14 @@ export async function incrementUsage(
 
   const field = type === "ai_posts" ? "ai_posts_used" : "audits_used";
 
-  await admin.rpc("increment_usage", {
-    user_id_param: userId,
-    field_name: field,
-  }).catch(async () => {
+  try {
+    const { error } = await admin.rpc("increment_usage", {
+      user_id_param: userId,
+      field_name: field,
+    });
+    
+    if (error) throw error;
+  } catch {
     // Fallback if RPC doesn't exist
     const { data: profile } = await admin
       .from("profiles")
@@ -82,12 +86,12 @@ export async function incrementUsage(
       .eq("id", userId)
       .single();
 
-    const current = (profile?.[field as keyof typeof profile] as number) || 0;
+    const current = profile ? ((profile[field as keyof typeof profile] as number | undefined) ?? 0) : 0;
 
     await admin
       .from("profiles")
       .update({ [field]: current + 1 })
       .eq("id", userId);
-  });
+  }
 }
 
