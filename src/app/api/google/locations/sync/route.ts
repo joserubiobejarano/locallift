@@ -4,83 +4,112 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 
 import { gbpFetch, refreshAccessToken } from "@/lib/google";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sql } from "@/lib/db/neon";
+import { updateGbpTokens } from "@/lib/db/gbp";
 import { resolveUser } from "@/lib/user-from-req";
-import { canUseGoogleConnection } from "@/lib/plan";
-import { getUserPlan } from "@/lib/plan-server";
+import { demoLocations } from "@/lib/demo-data";
+
+// MVP: paid-plan gating removed for GBP location sync; restore getUserPlan + canUseGoogleConnection if needed.
+
+type ConnRow = {
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  scope: string | null;
+};
 
 export async function POST(req: Request) {
+  const isDemo = req.headers.get("x-demo") === "true";
+
+  if (isDemo) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return NextResponse.json({ locations: demoLocations });
+  }
+
   const user = await resolveUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Check plan gating
-  const plan = await getUserPlan(user.id);
-  if (!canUseGoogleConnection(plan)) {
+  const connRows = await sql`
+    SELECT access_token, refresh_token, expires_at, scope
+    FROM public.gbp_connections
+    WHERE user_id = ${user.id}
+    LIMIT 1
+  `;
+
+  const conn = connRows[0] as ConnRow | undefined;
+  if (!conn) {
     return NextResponse.json(
-      { error: "Google connection is only available on paid plans" },
-      { status: 403 }
+      { error: "Google connection failed. Please try again." },
+      { status: 400 }
     );
   }
 
-  const admin = supabaseAdmin();
-  const { data: conn, error: connError } = await admin
-    .from("gbp_connections")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (connError) return NextResponse.json({ error: connError.message }, { status: 500 });
-  if (!conn) return NextResponse.json({ error: "Not connected to Google" }, { status: 400 });
-
-  let accessToken = conn.access_token as string;
+  let accessToken = conn.access_token;
 
   if (conn.expires_at && new Date(conn.expires_at) < new Date()) {
-    const refreshed = await refreshAccessToken(conn.refresh_token as string);
+    const refreshed = await refreshAccessToken(conn.refresh_token);
     accessToken = refreshed.access_token;
-
-    await admin
-      .from("gbp_connections")
-      .update({
-        access_token: accessToken,
-        expires_at: new Date(Date.now() + refreshed.expires_in * 1000).toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", user.id);
+    const expiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+    await updateGbpTokens({
+      userId: user.id,
+      accessToken,
+      refreshToken: conn.refresh_token,
+      expiresAt,
+      scope: refreshed.scope ?? conn.scope,
+    });
   }
 
   const accounts = await gbpFetch(`/accounts`, accessToken);
-  const upserts: Record<string, unknown>[] = [];
+  const accountList = (accounts as { accounts?: { name: string }[] }).accounts || [];
+  if (!accountList.length) {
+    return NextResponse.json({ error: "No locations were found for this account." }, { status: 404 });
+  }
 
-  for (const acc of accounts.accounts || []) {
-    const accId = acc.name as string;
+  let importedCount = 0;
+  for (const acc of accountList) {
+    const accId = acc.name;
     const locs = await gbpFetch(`/${accId}/locations`, accessToken);
 
-    for (const loc of locs.locations || []) {
-      upserts.push({
-        user_id: user.id,
-        location_id: loc.name,
-        title: loc.title ?? null,
-        address: loc.storefrontAddress ? JSON.stringify(loc.storefrontAddress) : null,
-        timezone: loc.timezone ?? null,
-        raw: loc,
-        updated_at: new Date().toISOString(),
-      });
+    for (const loc of (locs as { locations?: Record<string, unknown>[] }).locations || []) {
+      const locName = loc.name as string;
+      const title = (loc.title as string) ?? null;
+      const address = loc.storefrontAddress ? JSON.stringify(loc.storefrontAddress) : null;
+      const timezone = (loc.timezone as string) ?? null;
+      const now = new Date().toISOString();
+
+      await sql`
+        INSERT INTO public.gbp_locations (
+          user_id, location_name, title, address, timezone, raw, updated_at
+        ) VALUES (
+          ${user.id},
+          ${locName},
+          ${title},
+          ${address},
+          ${timezone},
+          ${loc as unknown},
+          ${now}
+        )
+        ON CONFLICT (user_id, location_name) DO UPDATE SET
+          title = EXCLUDED.title,
+          address = EXCLUDED.address,
+          timezone = EXCLUDED.timezone,
+          raw = EXCLUDED.raw,
+          updated_at = EXCLUDED.updated_at
+      `;
+      importedCount += 1;
     }
   }
 
-  if (upserts.length) {
-    const { error } = await admin.from("gbp_locations").upsert(upserts, { onConflict: "user_id,location_id" });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (importedCount === 0) {
+    return NextResponse.json({ error: "No locations were found for this account." }, { status: 404 });
   }
 
-  const { data: latest, error: latestError } = await admin
-    .from("gbp_locations")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+  const latest = await sql`
+    SELECT *
+    FROM public.gbp_locations
+    WHERE user_id = ${user.id}
+    ORDER BY updated_at DESC
+  `;
 
-  if (latestError) return NextResponse.json({ error: latestError.message }, { status: 500 });
-
-  return NextResponse.json({ locations: latest || [] });
+  return NextResponse.json({ locations: latest, imported: importedCount });
 }
-

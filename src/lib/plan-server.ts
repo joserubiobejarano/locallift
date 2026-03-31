@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase/server";
+import { sql } from "@/lib/db/neon";
 import type { PlanId, PlanStatus } from "@/lib/plan";
 
 export type UserPlanInfo = {
@@ -17,23 +17,22 @@ export async function getUserPlan(userId: string): Promise<PlanId> {
 }
 
 export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo> {
-  const supabase = await supabaseServer();
+  const rows = await sql`
+    SELECT *
+    FROM public.v_user_plan
+    WHERE user_id = ${userId}
+    LIMIT 1
+  `;
 
-  const { data: plan } = await supabase
-    .from("v_user_plan")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const plan = rows[0] as
+    | Record<string, unknown>
+    | undefined;
 
-  // Determine effective plan status
   const planStatus: PlanStatus =
     (plan?.subscription_status as PlanStatus) ||
     (plan?.plan_status as PlanStatus) ||
     "free";
 
-  // Determine effective plan ID
-  // If subscription is active/trialing, use plan_type from profile (which should be 'starter')
-  // Otherwise, use manual_plan or default to 'free'
   const effectivePlanId: PlanId =
     planStatus === "active" || planStatus === "trialing" || planStatus === "past_due"
       ? ((plan?.plan_type as PlanId) || "free")
@@ -42,11 +41,13 @@ export async function getUserPlanInfo(userId: string): Promise<UserPlanInfo> {
   return {
     planId: effectivePlanId,
     planStatus,
-    planType: plan?.plan_type || null,
-    currentPeriodEnd: plan?.plan_current_period_end || plan?.subscription_current_period_end || null,
-    aiPostsUsed: plan?.ai_posts_used || 0,
-    auditsUsed: plan?.audits_used || 0,
-    usageResetDate: plan?.usage_reset_date || null,
+    planType: (plan?.plan_type as string) || null,
+    currentPeriodEnd:
+      (plan?.plan_current_period_end as string) ||
+      (plan?.subscription_current_period_end as string) ||
+      null,
+    aiPostsUsed: Number(plan?.ai_posts_used ?? 0),
+    auditsUsed: Number(plan?.audits_used ?? 0),
+    usageResetDate: (plan?.usage_reset_date as string) || null,
   };
 }
-

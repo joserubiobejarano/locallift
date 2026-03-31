@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { stripe } from "@/lib/stripe";
-import { supabaseServer } from "@/lib/supabase/server";
+import { auth } from "@/auth";
 import { getServerAppUrl } from "@/lib/env";
 
 export async function POST() {
   try {
     const appUrl = getServerAppUrl();
 
-    const supabase = await supabaseServer();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user?.email) return NextResponse.redirect(new URL("/login", appUrl));
+    const session = await auth();
+    if (!session?.user?.id || !session.user.email) {
+      return NextResponse.redirect(new URL("/login", appUrl));
+    }
 
     const customers = await stripe.customers.list({ email: session.user.email, limit: 1 });
     const customer = customers.data[0] ?? (await stripe.customers.create({ email: session.user.email }));
@@ -26,10 +24,10 @@ export async function POST() {
     if (!portal.url) return NextResponse.json({ error: "Stripe portal URL missing" }, { status: 500 });
 
     return NextResponse.redirect(portal.url, { status: 303 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export const runtime = "nodejs";
-

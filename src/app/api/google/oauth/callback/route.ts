@@ -3,33 +3,89 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 import { exchangeCodeForTokens } from "@/lib/google";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { upsertGbpConnection } from "@/lib/db/gbp";
 import { getServerAppUrl } from "@/lib/env";
+import { parseGoogleOAuthState } from "@/lib/google-oauth-state";
+import { resolveUser } from "@/lib/user-from-req";
+
+function redirectWithGoogleError(reason: string) {
+  const res = NextResponse.redirect(
+    new URL(`/connect?google=error&reason=${reason}`, getServerAppUrl()),
+    { status: 302 }
+  );
+  res.cookies.set("ll_gbp_oauth_state", "", {
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  if (!code || !state) return new NextResponse("Missing code/state", { status: 400 });
-
-  const tokens = await exchangeCodeForTokens(code);
-
-  const userId = state;
-
-  const admin = supabaseAdmin();
-
-  const { error } = await admin.rpc("upsert_gbp_connection", {
-    p_user_id: userId,
-    p_access_token: tokens.access_token,
-    p_refresh_token: tokens.refresh_token ?? "",
-    p_expires_at: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
-    p_scope: tokens.scope ?? null,
-  });
-
-  if (error) {
-    return new Response(`DB error: ${error.message}`, { status: 500 });
+  if (!code || !state) {
+    return redirectWithGoogleError("connection_failed");
   }
 
-  return NextResponse.redirect(new URL("/settings?google=connected", getServerAppUrl()), { status: 302 });
-}
+  const cookieState = req.headers
+    .get("cookie")
+    ?.split(";")
+    .map((v) => v.trim())
+    .find((v) => v.startsWith("ll_gbp_oauth_state="))
+    ?.split("=")[1];
+  const normalizedCookieState = cookieState ? decodeURIComponent(cookieState) : "";
+  if (!normalizedCookieState || normalizedCookieState !== state) {
+    return redirectWithGoogleError("connection_failed");
+  }
 
+  const parsedState = parseGoogleOAuthState(state);
+  if (!parsedState.valid || !parsedState.userId) {
+    return redirectWithGoogleError("connection_failed");
+  }
+
+  const user = await resolveUser(req);
+  if (!user || user.id !== parsedState.userId) {
+    return redirectWithGoogleError("connection_failed");
+  }
+
+  let tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    scope?: string;
+    token_type: string;
+  };
+  try {
+    tokens = await exchangeCodeForTokens(code);
+  } catch {
+    return redirectWithGoogleError("connection_failed");
+  }
+
+  const refreshToken = typeof tokens.refresh_token === "string" ? tokens.refresh_token.trim() : "";
+  if (!refreshToken) {
+    return redirectWithGoogleError("missing_refresh_token");
+  }
+
+  try {
+    await upsertGbpConnection({
+      userId: user.id,
+      accessToken: tokens.access_token,
+      refreshToken,
+      expiresAt: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
+      scope: tokens.scope ?? null,
+    });
+  } catch (e: unknown) {
+    console.error("[GBP OAuth callback] failed to save connection", e);
+    return redirectWithGoogleError("connection_failed");
+  }
+
+  const res = NextResponse.redirect(new URL("/dashboard", getServerAppUrl()), {
+    status: 302,
+  });
+  res.cookies.set("ll_gbp_oauth_state", "", {
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
+}

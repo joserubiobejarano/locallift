@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sql } from "@/lib/db/neon";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,25 +16,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const admin = supabaseAdmin();
+    const auditText =
+      typeof audit_result === "string"
+        ? audit_result
+        : audit_result
+          ? JSON.stringify(audit_result)
+          : "";
 
-    const { error } = await admin.from("leads").insert({
-      email,
-      query_text,
-      audit_result,
-      user_agent: user_agent || req.headers.get("user-agent") || null,
-    });
-
-    if (error) {
-      console.error("[leads] insert error:", error);
-      return NextResponse.json(
-        { error: "Failed to save lead" },
-        { status: 500 }
-      );
-    }
+    await sql`
+      INSERT INTO public.leads (
+        email, business_query, audit_text
+      ) VALUES (
+        ${email},
+        ${query_text},
+        ${auditText || "(no audit text)"}
+      )
+    `;
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[leads] error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -42,4 +42,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

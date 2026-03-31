@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Header } from "@/components/marketing/Header";
 
 type FAQItem = {
   question: string;
@@ -58,39 +59,7 @@ export default function HomePage() {
       </div>
 
       {/* Header */}
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-6 md:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-orange-400">
-            <span className="text-sm font-semibold text-slate-950">LL</span>
-          </div>
-          <span className="text-lg font-semibold tracking-tight">LocalLift</span>
-        </Link>
-        <nav className="hidden items-center gap-8 text-sm text-slate-200/80 md:flex">
-          <a href="#features" className="hover:text-white">
-            Features
-          </a>
-          <a href="#testimonials" className="hover:text-white">
-            Customers
-          </a>
-          <a href="#faq" className="hover:text-white">
-            FAQ
-          </a>
-        </nav>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden text-sm font-medium text-slate-100/80 hover:text-white md:inline-flex"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/login?demo=1"
-            className="inline-flex items-center rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-white"
-          >
-            Try the demo
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-7xl px-4 pb-20 pt-4 md:px-6 lg:px-8">
         {/* HERO */}
@@ -537,9 +506,8 @@ function FeatureSplit({
   const isLeft = variant === "left";
   return (
     <div
-      className={`grid gap-8 md:grid-cols-2 md:items-center ${
-        !isLeft ? "md:flex-row-reverse" : ""
-      }`}
+      className={`grid gap-8 md:grid-cols-2 md:items-center ${!isLeft ? "md:flex-row-reverse" : ""
+        }`}
     >
       <div className={isLeft ? "" : "md:order-2"}>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -573,7 +541,7 @@ function FeatureSplit({
               <span className="h-2 w-2 rounded-full bg-rose-400" />
             </div>
           </div>
-          
+
           {/* Content area with icons/graphics */}
           <div className="space-y-4">
             {/* Feature-specific graphics */}
@@ -595,7 +563,7 @@ function FeatureSplit({
                 </div>
               </div>
             )}
-            
+
             {label.toLowerCase().includes("content") && (
               <div className="space-y-3">
                 <div className="rounded-xl bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-500/20 p-4 border border-orange-500/30">
@@ -615,7 +583,7 @@ function FeatureSplit({
                 </div>
               </div>
             )}
-            
+
             {label.toLowerCase().includes("audit") && (
               <div className="space-y-3">
                 <div className="rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-sky-500/20 p-4 border border-emerald-500/30">
@@ -641,7 +609,7 @@ function FeatureSplit({
               </div>
             )}
           </div>
-          
+
           {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-500/5 pointer-events-none" />
         </div>

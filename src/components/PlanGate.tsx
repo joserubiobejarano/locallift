@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { DashboardCallout } from "@/components/dashboard";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { useCurrentPlan } from "@/lib/use-current-plan";
 import { isPaidUser, isTrialing } from "@/lib/plan";
@@ -34,17 +35,20 @@ export function PlanGate({ children, fallback, showBanner = true, featureName = 
           <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
         )}
         {fallback || (
-          <div className="rounded-md border p-4 space-y-3">
-            <div>
-              <h3 className="text-sm font-medium mb-1">Premium Feature</h3>
-              <p className="text-sm text-muted-foreground">
-                {featureName} is available on LocalLift Starter. Upgrade to unlock.
-              </p>
-            </div>
-            <Link href="/settings#billing">
-              <Button>Upgrade to LocalLift Starter ($14.99/mo)</Button>
-            </Link>
-          </div>
+          <DashboardCallout
+            variant="neutral"
+            title="Paid plan"
+            action={
+              <Button asChild size="sm">
+                <Link href="/settings#billing">Upgrade to Starter</Link>
+              </Button>
+            }
+          >
+            <p className="text-muted-foreground">
+              {featureName} is available on LocalLift Starter. Upgrade to connect Google Business Profile,
+              sync reviews, and use AI reply drafts.
+            </p>
+          </DashboardCallout>
         )}
       </>
     );
@@ -64,9 +68,10 @@ export function PlanGateModal({ open, onOpenChange, featureName = "this feature"
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Please Upgrade</DialogTitle>
+          <DialogTitle>Upgrade required</DialogTitle>
           <DialogDescription>
-            {featureName} is available on LocalLift Starter. Upgrade to unlock this feature and more.
+            {featureName} is available on LocalLift Starter. Upgrade to connect Google Business Profile,
+            sync reviews, and post AI-drafted replies.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -1,8 +1,8 @@
 # LocalLift
 
-**Your AI assistant for local business profiles**
+**Your AI-powered platform for local business growth**
 
-LocalLift is an AI-powered workspace for local businesses and agencies to manage their online presence, generate local SEO content, handle reviews, and optimize their Google Business Profile.
+LocalLift is an AI-powered platform for local businesses and agencies. It helps them generate local SEO content, reply to customer reviews with AI, audit and optimize Google Business Profiles, and manage everything from one dashboard.
 
 ---
 
@@ -13,52 +13,112 @@ LocalLift helps local businesses:
 - **Generate local SEO content** (blogs, GBP posts, FAQs) with hyper-local focus
 - **Reply to reviews** (manually & via AI) across multiple platforms
 - **Connect to Google Business Profile** to sync locations and reviews
-- **Manage everything in one dashboard** (Content / Reviews / Settings)
+- **Run free profile audits** via a dedicated landing page for lead generation
+- **Manage everything in one dashboard** (Content / Reviews / Audit / Settings)
 
 ---
 
-## ✨ Current Features
+## ✨ Current Features (Production-Ready)
 
-### Authentication
-- Email + Google OAuth signup/login
+### 🔐 Authentication System
+- Email/password signup and login
+- Google OAuth for app access
 - Secure session management with Supabase
+- User profiles with business information
+- Auth callback handling for OAuth
 
-### Dashboard
-- **Overview** - Main dashboard with key metrics
-- **Content** - Generate and manage local SEO content
-  - Blog posts (hyper-local, neighborhood-focused)
-  - Google Business Profile posts
-  - FAQ generation
-- **Reviews** - Manage and reply to reviews
-  - Manual review entry and AI reply generation
-  - Google Business Profile review sync (when connected)
-- **Settings** - Account and integration management
-  - Google Business Profile connection
-  - Profile settings
+### 📝 Content Generator
+- **Blog posts** – Hyper-local, neighborhood-focused
+- **GBP posts** – Ready-to-publish ideas and drafts
+- **FAQs** – Based on local context
+- **Local SEO AI Agent** – Business + location aware
+- **Usage limits** – 20 posts/month (LocalLift Starter)
+- **Project history** – Save and manage all generated content
 
-### Content Generation
-- Local SEO blog posts
-- GBP post ideas and drafts
-- FAQ generation based on local context
-- All content emphasizes local angles (city, neighborhood, landmarks)
+### ⭐ Review Management
+- **Manual review entry** – Any platform (Google, Yelp, TripAdvisor, etc.)
+- **AI reply generation** – Context-aware, professional responses
+- **Unlimited replies** – No limits on review responses
+- **Review history** – Track all reviews and replies
+- **Platform-specific tones** – Adjust tone per platform
 
-### Review Management
-- Manual review input (any platform)
-- AI-powered reply generation
-- Review draft saving
-- Copy-to-clipboard for easy posting
+### 🔍 Profile Audit Tool
+- **AI-powered audits** – Comprehensive GBP analysis
+- **Free audit landing page** – `/free-audit` for lead generation
+- **Visual reports** – Scoring, priorities, actionable recommendations
+- **Lead capture** – Email collection for prospects (with conversion tracking)
+- **Demo version** – Available in demo mode
 
-### Google Business Profile Integration
-- OAuth connection
-- Location syncing
-- Review syncing (when connected)
-- Reply posting (when connected)
+### 🎭 Demo Mode
+- **Dedicated `/demo` route** – Creates demo session and redirects to dashboard
+- **Cookie + query param** – `?demo=1` or `ll_demo` cookie
+- **Middleware** – Injects `x-demo` header; blocks OAuth and auth APIs in demo
+- **Fake data** – Sample reviews, locations, audits, usage metrics
+- **Full functionality** – Generate content and replies in sandbox (with limits)
+- **No GBP required** – Perfect for demos and testing
 
-### Infrastructure
-- Supabase backend with Row Level Security (RLS)
-- Stripe integration foundation (checkout, webhook, plans)
-- OpenAI integration for content generation
-- PostgreSQL database with proper schema
+### 💳 Billing & Subscription (Stripe)
+- **Single plan** – LocalLift Starter at $14.99/month
+- **7-day free trial** – No credit card required
+- **Usage limits** – 20 posts/month, 5 audits/month, unlimited replies
+- **Customer portal** – Manage subscription, payment methods
+- **Plan gating** – Enforce limits, upgrade prompts (UpgradeBanner, UpgradeModal, PlanGate)
+
+### 🔌 Google Business Profile Integration (Backend Complete)
+- **OAuth connection** – Secure GBP account linking
+- **Connection status** – `GET /api/google/connection` to check if connected
+- **Location syncing** – Sync all GBP locations; list via `/api/google/locations` and `/api/google/locations/list`
+- **Review syncing** – Pull reviews from GBP
+- **Reply posting** – Post replies directly to GBP
+- **Token management** – Automatic token refresh
+- **Disconnect** – `POST /api/google/disconnect`
+- **UI in progress** – Settings and Reviews pages need polish (see [Still Pending](#-still-pending))
+
+### 📊 Dashboard & Metrics
+- **Overview** – 2×2 grid: reviews this month, content this month, audits this month, usage (posts/audits used vs limit)
+- **Dashboard summary API** – `GET /api/dashboard/summary`
+- **Usage tracking** – Monthly reset; demo mode shows sample metrics
+
+### 🏠 Marketing & Legal
+- **Homepage** – Hero, features, FAQ, testimonials, CTA
+- **Pricing page** – `/pricing` with plan details and CTA
+- **Footer** – Links to legal, contact, feedback
+- **Legal** – `/legal`, `/privacy`, `/terms`, `/contact`, `/feedback`
+
+### 🏗️ Infrastructure
+- **Next.js 16** with App Router
+- **React 19**, TypeScript
+- **Supabase** – Auth, database, Row Level Security
+- **Stripe** – Complete payment processing
+- **OpenAI** – GPT-4o-mini with custom local SEO agent
+- **PostgreSQL** – Robust database schema
+- **Middleware** – Demo mode detection and header injection
+
+---
+
+## 📊 Usage Limits (Current)
+
+| Plan   | AI posts/month | Audits/month | Review replies |
+|--------|----------------|--------------|----------------|
+| Free   | Gated          | Gated        | Gated          |
+| Starter| 20             | 5            | Unlimited      |
+
+- Limits enforced in API and UI; monthly reset via `usage_reset_date` on profiles.
+- Future tiers (Pro, Agency) are planned; see [docs/ROADMAP.md](./docs/ROADMAP.md).
+
+---
+
+## 🚧 Still Pending
+
+- **GBP UI wiring** – Settings: show connected GBP email, list of locations, “Disconnect Google” button, auto-sync toggle. Reviews: location selector, “Sync reviews now” button, status badges, loading/error states.
+- **Demo mode polish** – Top “You’re in demo mode” banner, stricter demo limits (e.g. 3 replies, 2 posts), disable “Post to Google” in demo, signup CTA after limits.
+- **Audit funnel** – Layout and CTA on free-audit results, social proof, conversion optimization.
+- **Dashboard analytics** – Trend cards (vs last month), simple charts (e.g. usage over time).
+- **Plan gating verification** – Ensure posting, content, and audit limits and upgrade CTAs are consistent everywhere.
+- **Pre-launch QA** – End-to-end GBP tests (OAuth, sync, reply posting), error logging (e.g. Sentry), performance pass.
+- **Marketing** – “Why LocalLift?” page, case studies, testimonials, SEO.
+
+See [docs/NEXT_STEPS.md](./docs/NEXT_STEPS.md) and [docs/ROADMAP.md](./docs/ROADMAP.md) for full details.
 
 ---
 
@@ -77,7 +137,7 @@ LocalLift helps local businesses:
 1. Clone the repository
 ```bash
 git clone <repository-url>
-cd local-lift
+cd Agent-LocalLift
 ```
 
 2. Install dependencies
@@ -94,7 +154,8 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Fill in your environment variables:
+Fill in your environment variables (see [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md) for details):
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -104,11 +165,14 @@ OPENAI_API_KEY=your_openai_api_key
 
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=your_redirect_uri
+# Redirect URI is typically NEXT_PUBLIC_APP_URL + /api/google/oauth/callback
+
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 STRIPE_SECRET_KEY=your_stripe_secret_key
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 STRIPE_WEBHOOK_SECRET=your_webhook_secret
+STRIPE_PRICE_STARTER=price_xxxxx
 ```
 
 4. Run database migrations
@@ -129,31 +193,41 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 📁 Project Structure
 
 ```
-local-lift/
+Agent-LocalLift/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── (auth)/            # Auth routes (login, signup)
-│   │   ├── (dashboard)/       # Dashboard routes (protected)
-│   │   │   ├── content/       # Content generation page
-│   │   │   ├── reviews/       # Reviews management page
-│   │   │   ├── settings/      # Settings page
-│   │   │   └── dashboard/     # Overview page
-│   │   └── api/               # API routes
-│   │       ├── openai/        # OpenAI content generation
-│   │       ├── google/        # Google Business Profile API
-│   │       ├── stripe/        # Stripe payment handling
-│   │       └── reviews/       # Review management
-│   ├── components/            # React components
-│   │   └── ui/               # UI component library
-│   └── lib/                   # Utility libraries
-│       ├── supabase/         # Supabase client helpers
-│       ├── auth.ts           # Authentication helpers
-│       ├── openai.ts         # OpenAI client
-│       ├── google.ts         # Google API client
-│       └── stripe.ts         # Stripe client
+│   ├── app/
+│   │   ├── (auth)/              # Auth routes (login, signup)
+│   │   ├── (dashboard)/         # Protected dashboard
+│   │   │   ├── dashboard/       # Overview & usage
+│   │   │   ├── content/         # Content generation
+│   │   │   ├── reviews/         # Reviews management
+│   │   │   ├── audit/           # Profile audit
+│   │   │   └── settings/        # Settings & billing
+│   │   ├── api/
+│   │   │   ├── openai/          # Content & review-reply generation
+│   │   │   ├── google/          # GBP OAuth, locations, reviews, replies, disconnect, connection
+│   │   │   ├── stripe/          # Checkout, portal, webhook
+│   │   │   ├── audit/           # Profile audit, free-profile (lead audit)
+│   │   │   ├── auth/            # signout, set
+│   │   │   ├── dashboard/       # summary
+│   │   │   ├── leads/           # Lead capture
+│   │   │   ├── projects/       # Content projects CRUD
+│   │   │   └── reviews/        # Manual review CRUD
+│   │   ├── demo/                # Demo mode entry
+│   │   ├── free-audit/          # Free audit landing
+│   │   ├── pricing/             # Pricing page
+│   │   ├── feedback/            # Feedback form
+│   │   ├── contact/             # Contact
+│   │   ├── legal/               # Legal hub
+│   │   ├── privacy/             # Privacy policy
+│   │   ├── terms/               # Terms of service
+│   │   └── auth/callback/       # OAuth callback
+│   ├── components/              # React components (UI, marketing, UpgradeModal, etc.)
+│   └── lib/                     # Utils, Supabase, auth, OpenAI, Stripe, Google, plan, usage, demo
 ├── supabase/
-│   └── migrations/           # Database migrations
-└── public/                   # Static assets
+│   └── migrations/
+├── docs/                        # ROADMAP, NEXT_STEPS, ARCHITECTURE, ENVIRONMENT_VARIABLES, etc.
+└── public/
 ```
 
 ---
@@ -161,93 +235,109 @@ local-lift/
 ## 🗄️ Database Schema
 
 ### Core Tables
-- `profiles` - User profiles with business information
-- `projects` - Generated content (blogs, posts, FAQs)
-- `subscriptions` - Stripe subscription mirror
-- `user_billing` - Billing information
+- `profiles` – User profiles, business info, usage counters (`ai_posts_used`, `audits_used`, `usage_reset_date`), plan fields
+- `projects` – Generated content (blogs, posts, FAQs)
+- `subscriptions` – Stripe subscription mirror
+- `user_billing` – Billing information
+- `leads` – Free-audit leads (with `converted`, `converted_at` for conversion tracking)
 
 ### Google Business Profile Tables
-- `gbp_connections` - Connected Google accounts
-- `gbp_locations` - Synced business locations
-- `reviews` - Reviews from Google and other platforms
-- `review_replies` - Generated and posted replies
+- `gbp_connections` – Connected Google accounts
+- `gbp_locations` – Synced business locations
+- `reviews` – Reviews from Google and other platforms
+- `review_replies` – Generated and posted replies
 
 ---
 
 ## 🔒 Security
 
-- Row Level Security (RLS) enabled on all Supabase tables
-- User authentication required for all dashboard routes
-- API routes protected with server-side auth checks
-- Environment variables for sensitive keys
-
----
-
-## 📊 Usage Limits
-
-Currently under development. Future plans:
-- Free tier: 10 content generations/month, 10 review replies/month
-- Starter tier: 100 content generations, 100 review replies
-- Pro tier: 500 content generations, 500 review replies + automation
+- Row Level Security (RLS) enabled on Supabase tables
+- User authentication required for dashboard routes
+- API routes protected with server-side auth (and demo checks where applicable)
+- Sensitive keys in environment variables only
 
 ---
 
 ## 🛣️ Roadmap
 
-See [docs/ROADMAP.md](./docs/ROADMAP.md) for detailed development phases and future features.
+See [docs/ROADMAP.md](./docs/ROADMAP.md) for full phases and future features.
 
-**Current Phase**: Phase 1 - "Manual but powerful" MVP
-- ✅ Core authentication and dashboard
-- ✅ Content generation
-- ✅ Manual review replies
-- 🚧 Profile audit feature
-- 🚧 Marketing homepage
+**Current status**
+- ✅ **Phase 1**: Core Product (100% Complete)
+- ✅ **Phase 2**: Monetization & Billing (100% Complete)
+- 🚧 **Phase 3**: Google Business Profile (backend 100%, UI ~70%)
+
+**Next steps**  
+See [docs/NEXT_STEPS.md](./docs/NEXT_STEPS.md) for the developer checklist.
+
+**Other docs**
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) – Architecture overview
+- [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md) – Env reference
+- [docs/DEPLOYMENT_CHECKLIST.md](./docs/DEPLOYMENT_CHECKLIST.md) – Deployment
+- [docs/SMOKE_TEST_CHECKLIST.md](./docs/SMOKE_TEST_CHECKLIST.md) – Smoke tests
 
 ---
 
 ## 🧪 Development
-
-### Running Tests
-```bash
-npm run test
-```
 
 ### Linting
 ```bash
 npm run lint
 ```
 
-### Building for Production
+### Build
 ```bash
 npm run build
 npm start
 ```
+
+*No test script is configured yet; see roadmap for future QA and E2E plans.*
 
 ---
 
 ## 📝 API Routes
 
 ### OpenAI
-- `POST /api/openai/generate` - Generate content (blog/post/FAQ)
-- `POST /api/openai/review-reply` - Generate review reply
+- `POST /api/openai/generate` – Generate content (blog/post/FAQ)
+- `POST /api/openai/review-reply` – Generate review reply
 
 ### Google Business Profile
-- `GET /api/google/oauth/start` - Start OAuth flow
-- `GET /api/google/oauth/callback` - OAuth callback
-- `GET /api/google/locations` - Get connected locations
-- `POST /api/google/locations/sync` - Sync locations
-- `POST /api/google/reviews/sync` - Sync reviews for a location
-- `POST /api/google/replies` - Post a reply to a review
-- `POST /api/google/disconnect` - Disconnect Google account
+- `GET /api/google/oauth/start` – Start OAuth flow
+- `GET /api/google/oauth/callback` – OAuth callback
+- `GET /api/google/connection` – Check if user has GBP connected
+- `GET /api/google/locations` – Get connected locations
+- `GET /api/google/locations/list` – List locations (for dropdowns etc.)
+- `POST /api/google/locations/sync` – Sync locations from GBP
+- `POST /api/google/reviews/sync` – Sync reviews for a location
+- `POST /api/google/replies` – Post a reply to a review
+- `POST /api/google/disconnect` – Disconnect Google account
+
+### Audit
+- `POST /api/audit/profile` – Run profile audit (authenticated)
+- `POST /api/audit/free-profile` – Free audit (lead capture)
+
+### Dashboard & Leads
+- `GET /api/dashboard/summary` – Dashboard summary data
+- `POST /api/leads` – Submit lead (e.g. free-audit)
 
 ### Reviews
-- `GET /api/reviews` - Get user's reviews
-- `POST /api/reviews` - Create manual review entry
+- `GET /api/reviews` – Get user’s reviews
+- `POST /api/reviews` – Create manual review entry
+
+### Projects
+- `GET /api/projects` – List projects
+- `POST /api/projects` – Create project
+- `GET /api/projects/[id]` – Get project
+- (Update/delete as implemented)
+
+### Auth
+- `POST /api/auth/signout` – Sign out
+- `POST /api/auth/set` – Set session (e.g. post-OAuth)
 
 ### Stripe
-- `POST /api/stripe/checkout` - Create checkout session
-- `POST /api/stripe/webhook` - Handle webhook events
-- `GET /api/stripe/portal` - Access customer portal
+- `POST /api/stripe/checkout` – Create checkout session
+- `POST /api/stripe/webhook` – Handle webhook events
+- `GET /api/stripe/portal` – Redirect to customer portal
 
 ---
 
@@ -263,19 +353,20 @@ This is currently a private project. For internal contributors:
 
 ## 📄 License
 
-Proprietary - All rights reserved
+Proprietary – All rights reserved
 
 ---
 
 ## 🙏 Acknowledgments
 
 Built with:
-- [Next.js](https://nextjs.org) - React framework
-- [Supabase](https://supabase.com) - Backend as a service
-- [OpenAI](https://openai.com) - AI content generation
-- [Stripe](https://stripe.com) - Payment processing
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [Radix UI](https://www.radix-ui.com) - UI components
+- [Next.js](https://nextjs.org) – React framework
+- [Supabase](https://supabase.com) – Backend as a service
+- [OpenAI](https://openai.com) – AI content generation
+- [Stripe](https://stripe.com) – Payment processing
+- [Tailwind CSS](https://tailwindcss.com) – Styling
+- [Radix UI](https://www.radix-ui.com) – UI components
+- [Lucide React](https://lucide.dev) – Icons
 
 ---
 

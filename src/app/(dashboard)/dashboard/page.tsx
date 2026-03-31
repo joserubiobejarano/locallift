@@ -1,228 +1,188 @@
-"use client";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
+import {
+  DashboardCallout,
+  DashboardEmptyState,
+  DashboardPage,
+  DashboardPageHeader,
+  DashboardSection,
+} from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ensureBrowserToken } from "@/lib/ensure-token";
-import { useCurrentPlan } from "@/lib/use-current-plan";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
+import { getDashboardMetrics } from "@/lib/dashboard-metrics";
+import { getUserPlanInfo } from "@/lib/plan-server";
 import { isPaidUser, isTrialing } from "@/lib/plan";
+import { auth } from "@/auth";
 
-type SummaryData = {
-  projectsCount: number;
-  reviewsCount: number;
-  locationsCount: number;
-};
+export default async function DashboardPageRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const cookieStore = await cookies();
+  const isDemo = resolvedSearchParams.demo === "1" || cookieStore.get("ll_demo")?.value === "true";
 
-type DisplaySummary = SummaryData & {
-  averageRating?: number;
-  profileFixes?: number;
-};
+  const metrics = await getDashboardMetrics(isDemo);
+  let planInfo = null;
+  let hasPaidAccess = false;
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { planInfo, planStatus, isLoading: planLoading } = useCurrentPlan();
-  const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
-  const [summary, setSummary] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  if (!isDemo) {
+    const session = await auth();
+    const user = session?.user;
 
-  useEffect(() => {
-    async function fetchSummary() {
+    if (user?.id) {
       try {
-        setLoading(true);
-        setError(null);
-        
-        const token = await ensureBrowserToken();
-        if (!token) {
-          setError("Please log in again.");
-          setLoading(false);
-          return;
-        }
-
-        console.log(
-          "[Dashboard] calling /api/dashboard/summary with token len:",
-          token.length
-        );
-        const res = await fetch("/api/dashboard/summary", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        
-        if (res.status === 401) {
-          setError("Please log in again.");
-          setLoading(false);
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error("Failed to load stats");
-        }
-
-        const data = await res.json();
-        setSummary(data);
+        planInfo = await getUserPlanInfo(user.id);
+        hasPaidAccess = isPaidUser(planInfo.planStatus) || isTrialing(planInfo.planStatus);
       } catch (e) {
-        console.error("[Dashboard] error fetching summary:", e);
-        setError("Couldn't load your stats. Try refreshing the page.");
-      } finally {
-        setLoading(false);
+        console.error("[Dashboard] Failed to fetch plan info:", e);
       }
     }
+  }
 
-    fetchSummary();
-  }, []);
+  const showError = !isDemo && Boolean(metrics?.criticalError);
+  const isEmpty =
+    !isDemo && metrics && !metrics.criticalError && metrics.totalReviewsSynced === 0;
 
   return (
-    <div className="max-w-6xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Welcome back</h1>
-        <p className="text-muted-foreground">
-          Here's what's happening with your local presence.
-        </p>
+    <DashboardPage width="lg">
+      <DashboardPageHeader
+        title="Overview"
+        description={
+          <>
+            Track loaded reviews, replies still needed, drafts, and what you&apos;ve posted — same
+            workflow as on{" "}
+            <Link href="/reviews" className="text-foreground font-medium underline-offset-4 hover:underline">
+              Reviews
+            </Link>
+            .
+          </>
+        }
+      />
+
+      {planInfo && hasPaidAccess && !isDemo && (
+        <UpgradeBanner planStatus={planInfo.planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
+      )}
+
+      {showError && (
+        <DashboardCallout variant="error">
+          <p>{metrics?.criticalError ?? "We could not load stats. Please refresh."}</p>
+        </DashboardCallout>
+      )}
+
+      {isEmpty && (
+        <DashboardEmptyState
+          title="No reviews synced yet"
+          description={
+            <>
+              Open{" "}
+              <Link href="/reviews" className="text-foreground underline-offset-4 hover:underline">
+                Reviews
+              </Link>{" "}
+              and sync from Google Business Profile to load your inbox. Or try the workflow first with{" "}
+              <Link href="/reviews?demo=1" className="text-foreground underline-offset-4 hover:underline">
+                sample reviews
+              </Link>{" "}
+              (no GBP required).
+            </>
+          }
+        />
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Reviews loaded</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.totalReviewsSynced ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isDemo
+                ? "Sample data — mirrors “Loaded” on Reviews."
+                : "Reviews synced into your review inbox from Google Business Profile (all locations)."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Unanswered</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.unansweredReviews ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isDemo
+                ? "Sample data — mirrors “Unanswered” on Reviews (no reply on Google yet)."
+                : "Not yet marked replied on Google after sync. On Reviews, some of these may already have a draft in the editor."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Drafts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.draftsCount ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isDemo
+                ? "Sample count — mirrors drafts in progress on the Reviews page."
+                : "Unposted drafts saved in LocalLift (database). Text you only have in the Reviews editor is not counted here."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Posted / replied</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.repliesPostedThisMonth ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isDemo
+                ? "Sample data — replied reviews this period in demo."
+                : "Reviews marked replied on Google, updated this calendar month."}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {loading && (
-        <div className="text-sm text-muted-foreground">Loading...</div>
+      {isDemo && (
+        <DashboardCallout variant="info">
+          <p>
+            You&apos;re viewing sample review data. Open{" "}
+            <Link href="/reviews?demo=1" className="text-foreground underline-offset-4 hover:underline">
+              Reviews
+            </Link>{" "}
+            to walk through generate, draft, and reply — then connect GBP when you&apos;re ready.
+          </p>
+        </DashboardCallout>
       )}
 
-      {error && (
-        <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
-      )}
-
-      {!loading && !error && summary && (() => {
-        const showDemo = summary.projectsCount === 0 && summary.reviewsCount === 0 && summary.locationsCount === 0;
-        const displaySummary: DisplaySummary = showDemo
-          ? { projectsCount: 12, reviewsCount: 24, locationsCount: 3, averageRating: 4.7, profileFixes: 3 }
-          : summary;
-
-        return (
-          <>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-medium">Content projects</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold">{displaySummary.projectsCount}</div>
-                  <CardDescription className="mt-2">
-                    Saved ideas and articles.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-medium">
-                    {showDemo ? "New reviews this month" : "Reviews stored"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold">{displaySummary.reviewsCount}</div>
-                  <CardDescription className="mt-2">
-                    {showDemo
-                      ? `${displaySummary.averageRating} average rating.`
-                      : "From your connected profiles."}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-medium">
-                    {showDemo ? "Suggested profile fixes" : "GBP locations"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold">
-                    {showDemo ? displaySummary.profileFixes : displaySummary.locationsCount}
-                  </div>
-                  <CardDescription className="mt-2">
-                    {showDemo
-                      ? "Waiting for your attention."
-                      : summary.locationsCount === 0
-                      ? "Connect Google in Settings to sync locations."
-                      : "Connected from Google Business Profile."}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </div>
-
-            {showDemo && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-4">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Showing a sample snapshot. Connect your Google Business Profile to see real numbers.
-                </p>
-              </div>
-            )}
-
-            {hasPaidAccess && planInfo && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base font-medium">Local SEO Posts</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-semibold">
-                      {planInfo.aiPostsUsed} / 20
-                    </div>
-                    <CardDescription className="mt-2">
-                      Posts used this month
-                      {planInfo.usageResetDate && (
-                        <span className="block text-xs mt-1">
-                          Resets on {new Date(planInfo.usageResetDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base font-medium">Full Audits</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-semibold">
-                      {planInfo.auditsUsed} / 5
-                    </div>
-                    <CardDescription className="mt-2">
-                      Audits used this month
-                      {planInfo.usageResetDate && (
-                        <span className="block text-xs mt-1">
-                          Resets on {new Date(planInfo.usageResetDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Quick actions</h2>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={() => router.push("/content")}>
-                  Generate content
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/reviews")}
-                >
-                  Reply to reviews
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/audit")}
-                >
-                  Run quick audit
-                </Button>
-              </div>
-            </div>
-          </>
-        );
-      })()}
-    </div>
+      <DashboardSection title="Quick actions">
+        <div className="flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/reviews">Go to Reviews</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/reviews?demo=1">Test sample reviews</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/settings">Account &amp; reply settings</Link>
+          </Button>
+        </div>
+      </DashboardSection>
+    </DashboardPage>
   );
 }
-

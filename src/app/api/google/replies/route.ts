@@ -6,20 +6,26 @@ import { resolveUser } from "@/lib/user-from-req";
 
 import { googleFetch } from "@/lib/google";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sql } from "@/lib/db/neon";
 import { canUseReviewAutomation } from "@/lib/plan";
 import { getUserPlan } from "@/lib/plan-server";
 
 export async function POST(req: NextRequest) {
+  const isDemo = req.headers.get("x-demo") === "true";
+
+  if (isDemo) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return NextResponse.json({ ok: true });
+  }
+
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Check plan gating
   const plan = await getUserPlan(user.id);
   if (!canUseReviewAutomation(plan)) {
     return NextResponse.json(
-      { error: "Review automation is only available on paid plans" },
+      { error: "Posting replies to Google is only available on paid plans" },
       { status: 403 }
     );
   }
@@ -31,7 +37,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // GBP v4: setReply endpoint
     const url = `https://mybusiness.googleapis.com/v4/${encodeURIComponent(locationName)}/reviews/${encodeURIComponent(reviewId)}:updateReply`;
 
     const r = await googleFetch(user.id, url, {
@@ -45,34 +50,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: t }, { status: r.status });
     }
 
-    const admin = supabaseAdmin();
+    const reviewRows = await sql`
+      SELECT id FROM public.reviews
+      WHERE user_id = ${user.id}
+        AND google_review_id = ${reviewId}
+      LIMIT 1
+    `;
 
-    // find local review
-    const { data: review } = await admin
-      .from("reviews")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("google_review_id", reviewId)
-      .maybeSingle();
+    const review = reviewRows[0] as { id: string } | undefined;
 
     if (review) {
-      await admin.from("review_replies").insert({
-        user_id: user.id,
-        review_id: review.id,
-        draft_markdown: reply,
-        posted: true,
-        posted_at: new Date().toISOString(),
-      });
+      await sql`
+        INSERT INTO public.review_replies (
+          user_id, review_id, draft_markdown, posted, posted_at
+        ) VALUES (
+          ${user.id},
+          ${review.id},
+          ${reply},
+          true,
+          ${new Date().toISOString()}
+        )
+      `;
 
-      await admin
-        .from("reviews")
-        .update({ status: "replied", reply_comment: reply, reply_update_time: new Date().toISOString() })
-        .eq("id", review.id);
+      await sql`
+        UPDATE public.reviews
+        SET
+          status = 'replied',
+          reply_comment = ${reply},
+          reply_update_time = ${new Date().toISOString()},
+          updated_at = now()
+        WHERE id = ${review.id}
+      `;
     }
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

@@ -3,11 +3,9 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 
 import { resolveUser } from "@/lib/user-from-req";
-
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sql } from "@/lib/db/neon";
 
 export async function GET(req: NextRequest) {
-
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,25 +14,14 @@ export async function GET(req: NextRequest) {
 
   if (!loc) return NextResponse.json({ items: [] });
 
-  const admin = supabaseAdmin();
+  const rows = await sql`
+    SELECT google_review_id, reviewer_name, star_rating, comment, status
+    FROM public.reviews
+    WHERE user_id = ${user.id}
+      AND location_name = ${loc}
+    ORDER BY review_update_time DESC NULLS LAST
+    LIMIT 100
+  `;
 
-  const { data, error } = await admin
-
-    .from("reviews")
-
-    .select("google_review_id, reviewer_name, star_rating, comment, status")
-
-    .eq("user_id", user.id)
-
-    .eq("location_name", loc)
-
-    .order("review_update_time", { ascending: false })
-
-    .limit(100);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ items: data ?? [] });
-
+  return NextResponse.json({ items: rows });
 }
-

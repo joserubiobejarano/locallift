@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sql } from "@/lib/db/neon";
 import { generateProfileAudit, type ProfileAuditInput } from "@/lib/openai";
 
 export async function POST(req: NextRequest) {
@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { businessQuery, city, category, email } = body;
 
-    // Validate required fields
     if (!businessQuery || !email || !businessQuery.trim() || !email.trim()) {
       return NextResponse.json(
         { ok: false, error: "Missing required fields" },
@@ -18,7 +17,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare input for generateProfileAudit
     const input: ProfileAuditInput = {
       mode: "quick",
       businessName: null,
@@ -28,35 +26,31 @@ export async function POST(req: NextRequest) {
       gbpData: null,
     };
 
-    // Generate audit using OpenAI
     const auditText = await generateProfileAudit(input);
 
-    // Extract score from markdown using regex
-    // Look for patterns like "Score: 78/100" or "scores 78/100"
     const scoreMatch = auditText.match(/(?:score|scores):?\s+(\d{1,3})\/100/i);
     let score: number | null = null;
-    
+
     if (scoreMatch) {
       const parsedScore = parseInt(scoreMatch[1], 10);
-      // Clamp between 0 and 100
       score = Math.max(0, Math.min(100, parsedScore));
     }
 
-    // Insert lead into database using admin client
-    const admin = supabaseAdmin();
-    const { error: insertError } = await admin.from("leads").insert({
-      email: email.trim(),
-      business_query: businessQuery.trim(),
-      city: city?.trim() || null,
-      category: category?.trim() || null,
-      audit_text: auditText,
-      score,
-    });
-
-    if (insertError) {
-      console.error("[free-audit] insert error:", insertError);
-      // Don't fail the request if insert fails, but log it
-      // We still want to return the audit to the user
+    try {
+      await sql`
+        INSERT INTO public.leads (
+          email, business_query, city, category, audit_text, score
+        ) VALUES (
+          ${email.trim()},
+          ${businessQuery.trim()},
+          ${city?.trim() || null},
+          ${category?.trim() || null},
+          ${auditText},
+          ${score}
+        )
+      `;
+    } catch (insertErr) {
+      console.error("[free-audit] insert error:", insertErr);
     }
 
     return NextResponse.json({
@@ -64,7 +58,7 @@ export async function POST(req: NextRequest) {
       auditText,
       score,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[free-audit] error:", err);
     return NextResponse.json(
       {
@@ -75,4 +69,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

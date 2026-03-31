@@ -1,14 +1,14 @@
-export const runtime = "nodejs";
-
 import { NextRequest, NextResponse } from "next/server";
 
 import { resolveUser } from "@/lib/user-from-req";
 
 import { googleFetch } from "@/lib/google";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { canUseGoogleConnection } from "@/lib/plan";
-import { getUserPlan } from "@/lib/plan-server";
+import { sql } from "@/lib/db/neon";
+
+// MVP: paid-plan gating removed for GBP location fetch; restore getUserPlan + canUseGoogleConnection if needed.
+
+export const runtime = "nodejs";
 
 const LIST_URL =
   "https://mybusinessbusinessinformation.googleapis.com/v1/locations?pageSize=100&readMask=name,title,storeCode,placeId";
@@ -17,15 +17,6 @@ export async function GET(req: NextRequest) {
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  // Check plan gating
-  const plan = await getUserPlan(user.id);
-  if (!canUseGoogleConnection(plan)) {
-    return NextResponse.json(
-      { error: "Google connection is only available on paid plans" },
-      { status: 403 }
-    );
-  }
 
   try {
     const r = await googleFetch(user.id, LIST_URL);
@@ -37,28 +28,38 @@ export async function GET(req: NextRequest) {
 
     const json = await r.json();
 
-    // upsert minimal gbp_locations for convenience
-    const admin = supabaseAdmin();
-
-    const upserts = (json.locations ?? []).map((loc: any) => ({
+    const upserts = (json.locations ?? []).map((loc: Record<string, unknown>) => ({
       user_id: user.id,
-      location_name: loc.name,
-      title: loc.title ?? null,
-      store_code: loc.storeCode ?? null,
-      place_id: loc.placeId ?? null,
+      location_name: loc.name as string,
+      title: (loc.title as string) ?? null,
+      store_code: (loc.storeCode as string) ?? null,
+      place_id: (loc.placeId as string) ?? null,
       updated_at: new Date().toISOString(),
     }));
 
-    if (upserts.length) {
-      const { error } = await admin.from("gbp_locations").upsert(upserts, {
-        onConflict: "user_id,location_name",
-      });
-      if (error) console.error("[locations.upsert]", error);
+    for (const row of upserts) {
+      await sql`
+        INSERT INTO public.gbp_locations (
+          user_id, location_name, title, store_code, place_id, updated_at
+        ) VALUES (
+          ${row.user_id},
+          ${row.location_name},
+          ${row.title},
+          ${row.store_code},
+          ${row.place_id},
+          ${row.updated_at}
+        )
+        ON CONFLICT (user_id, location_name) DO UPDATE SET
+          title = EXCLUDED.title,
+          store_code = EXCLUDED.store_code,
+          place_id = EXCLUDED.place_id,
+          updated_at = EXCLUDED.updated_at
+      `;
     }
 
     return NextResponse.json({ locations: json.locations ?? [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

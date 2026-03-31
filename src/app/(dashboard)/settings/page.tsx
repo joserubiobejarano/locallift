@@ -1,202 +1,459 @@
+"use client";
+
 import Link from "next/link";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
+import {
+  DashboardCallout,
+  DashboardPage,
+  DashboardPageHeader,
+  FormField,
+  StatusBadge,
+} from "@/components/dashboard";
+import SignOutButton from "@/components/SignOutButton";
 import { Button } from "@/components/ui/button";
-import DisconnectGoogleButton from "@/components/DisconnectGoogleButton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { canUseGoogleConnection, type PlanId } from "@/lib/plan";
+const DEFAULT_TONE = "Friendly and professional";
 
-export default async function SettingsPage() {
+type GoogleLocation = {
+  id: string;
+  locationName: string;
+  title: string | null;
+  primaryCategory: string | null;
+  isSuspended: boolean;
+};
 
-  const supabase = await supabaseServer();
+type ConnectionData = {
+  connected: boolean;
+  locations?: GoogleLocation[];
+};
 
-  const { data: { session } } = await supabase.auth.getSession();
+function SettingsPageContent() {
+  const searchParams = useSearchParams();
+  const [isDemo, setIsDemo] = useState(false);
+  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [connLoading, setConnLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const userId = session?.user?.id || null;
+  const [businessName, setBusinessName] = useState("");
+  const [tone, setTone] = useState(DEFAULT_TONE);
+  const [ownerName, setOwnerName] = useState("");
+  const [contactPreference, setContactPreference] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  if (!userId) {
+  const [isSyncing, setIsSyncing] = useState(false);
 
-    return (
-
-      <div className="max-w-xl space-y-4">
-
-        <h1 className="text-2xl font-semibold">Settings</h1>
-
-        <p className="text-sm text-muted-foreground">
-
-          You’re not signed in. Please <Link href="/login" className="underline">log in</Link> to manage your account.
-
-        </p>
-
-        <Link href="/login"><Button>Go to login</Button></Link>
-
-      </div>
-
-    );
-
+  function readApiErrorMessage(raw: unknown, fallback: string): string {
+    if (raw && typeof raw === "object" && "error" in raw && typeof raw.error === "string") {
+      const normalized = raw.error.toLowerCase();
+      if (normalized.includes("not connected")) return "Google connection failed. Please try again.";
+      if (normalized.includes("paid plans"))
+        return "Connecting Google Business Profile and syncing reviews requires a paid plan.";
+      return raw.error;
+    }
+    return fallback;
   }
 
-  // Load profile, plan, google connection and locations (all best-effort)
+  useEffect(() => {
+    const cookies = document.cookie.split(";");
+    const demoCookie = cookies.find((c) => c.trim().startsWith("ll_demo="));
+    const isDemoMode = demoCookie?.split("=")[1] === "true";
+    setIsDemo(isDemoMode);
 
-  const [{ data: profile }, { data: plan }, { data: conn }, { data: locations }] = await Promise.all([
+    if (isDemoMode) {
+      setConnLoading(false);
+      setSettingsLoading(false);
+      return;
+    }
 
-    supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+    let cancelled = false;
 
-    supabase.from("v_user_plan").select("*").eq("user_id", userId).maybeSingle(),
+    async function load() {
+      setConnLoading(true);
+      setSettingsLoading(true);
+      setError(null);
+      setSettingsError(null);
 
-    supabase.from("gbp_connections").select("user_id").eq("user_id", userId).maybeSingle(),
+      try {
+        const [connRes, settingsRes] = await Promise.all([
+          fetch("/api/google/connection"),
+          fetch("/api/settings/reply"),
+        ]);
 
-    supabase.from("gbp_locations").select("*").eq("user_id", userId).order("title"),
+        if (cancelled) return;
 
-  ]);
+        if (settingsRes.ok) {
+          const s = await settingsRes.json();
+          setBusinessName(typeof s.businessName === "string" ? s.businessName : "");
+          setTone(
+            typeof s.tone === "string" && s.tone.trim() ? s.tone.trim() : DEFAULT_TONE
+          );
+          setOwnerName(typeof s.ownerName === "string" ? s.ownerName : "");
+          setContactPreference(typeof s.contactPreference === "string" ? s.contactPreference : "");
+        } else {
+          setSettingsError("Could not load reply settings.");
+        }
 
-  // Determine effective plan: if subscription is active, use manual_plan, otherwise use profile.plan
-  const effectivePlan: PlanId =
-    plan?.status && (plan.status === "active" || plan.status === "trialing")
-      ? ((plan.manual_plan as PlanId) || "free")
-      : ((profile?.plan as PlanId) || "free");
+        if (connRes.ok) {
+          const data = await connRes.json();
+          setConnectionData(data);
+        } else {
+          setError("Failed to load Google connection.");
+          setConnectionData(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Failed to load Google connection.");
+          setSettingsError("Could not load reply settings.");
+          setConnectionData(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setConnLoading(false);
+          setSettingsLoading(false);
+        }
+      }
+    }
 
-  const canConnectGoogle = canUseGoogleConnection(effectivePlan);
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const googleStatus = searchParams.get("google");
+    const reason = searchParams.get("reason");
+    if (googleStatus !== "error") return;
+    if (reason === "missing_refresh_token") {
+      setError("Google connection failed. Please try again.");
+      return;
+    }
+    setError("Google connection failed. Please try again.");
+  }, [searchParams]);
+
+  const fetchConnectionData = async () => {
+    setConnLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/google/connection");
+      if (!res.ok) throw new Error("Failed to load connection data");
+      const data = await res.json();
+      setConnectionData(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load connection data");
+    } finally {
+      setConnLoading(false);
+    }
+  };
+
+  const handleSaveReplySettings = async () => {
+    setSaveState("saving");
+    setSettingsError(null);
+    try {
+      const res = await fetch("/api/settings/reply", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName,
+          tone,
+          ownerName,
+          contactPreference,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(typeof j.error === "string" ? j.error : "Save failed");
+      }
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2500);
+    } catch (e: unknown) {
+      setSaveState("error");
+      setSettingsError(e instanceof Error ? e.message : "Save failed");
+      setTimeout(() => setSaveState("idle"), 3000);
+    }
+  };
+
+  const handleSyncLocations = async () => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/google/locations/sync", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(readApiErrorMessage(body, "Location sync failed. Please try again."));
+      }
+      await fetchConnectionData();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Location sync failed. Please try again.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setError(null);
+    try {
+      const res = await fetch("/api/google/disconnect", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(readApiErrorMessage(body, "Failed to disconnect"));
+      }
+      await fetchConnectionData();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to disconnect");
+    }
+  };
+
+  const handleConnectGoogle = () => {
+    window.location.href = "/api/google/oauth/start";
+  };
+
+  if (isDemo) {
+    return (
+      <DashboardPage width="sm">
+        <DashboardPageHeader
+          title="Settings"
+          description="Configure review reply defaults and connect Google Business Profile."
+        />
+
+        <DashboardCallout
+          variant="warning"
+          title="You are in demo mode"
+          action={
+            <Button asChild size="sm">
+              <Link href="/signup">Create your free account</Link>
+            </Button>
+          }
+        >
+          <p className="text-muted-foreground">
+            Settings are not available in demo mode. Create your free account to save reply preferences
+            and connect Google Business Profile.
+          </p>
+        </DashboardCallout>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Google Business Profile</CardTitle>
+            <CardDescription>Google connection is not available in demo mode.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/signup">Create your free account</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </DashboardPage>
+    );
+  }
+
+  const locations = connectionData?.locations || [];
+  const gbpConnected = Boolean(connectionData?.connected);
 
   return (
+    <DashboardPage width="sm">
+      <DashboardPageHeader
+        title="Settings"
+        description="Reply defaults for AI-generated text and your Google Business Profile connection."
+      />
 
-    <div className="max-w-2xl space-y-8">
-
-      <section>
-
-        <h1 className="text-2xl font-semibold mb-2">Settings</h1>
-
-        <p className="text-muted-foreground">Update your profile and connections.</p>
-
-      </section>
-
-      <section className="space-y-2">
-
-        <h2 className="text-lg font-medium">Profile</h2>
-
-        <div className="text-sm">
-
-          <div><span className="font-medium">Name:</span> {profile?.full_name ?? "—"}</div>
-
-          <div><span className="font-medium">Business:</span> {profile?.business_name ?? "—"}</div>
-
-          <div><span className="font-medium">City:</span> {profile?.city ?? "—"}</div>
-
-          <div><span className="font-medium">Country:</span> {profile?.country ?? "—"}</div>
-
-        </div>
-
-      </section>
-
-      <section className="space-y-2">
-
-        <h2 className="text-lg font-medium">Plan & Billing</h2>
-
-        <p className="text-sm text-muted-foreground">
-
-          Current: <span className="font-medium">{plan?.status ? "Paid" : (profile?.plan ?? "free")}</span>
-
-        </p>
-
-        <div className="flex gap-3">
-
-          <form action="/api/stripe/checkout" method="post">
-
-            <input type="hidden" name="priceId" value={process.env.STRIPE_PRICE_STARTER ?? ""} />
-
-            <Button type="submit">Upgrade</Button>
-
-          </form>
-
-          <form action="/api/stripe/portal" method="post">
-
-            <Button type="submit" variant="secondary">Manage Billing</Button>
-
-          </form>
-
-        </div>
-
-      </section>
-
-      <section className="space-y-2">
-
-        <h2 className="text-lg font-medium">Google Business Profile</h2>
-
-        {!conn ? (
-
-          <div className="space-y-2">
-
-            {!canConnectGoogle ? (
-              <div className="rounded-md border p-4 space-y-3">
-                <div>
-                  <h3 className="text-sm font-medium mb-1">Upgrade to connect Google Business Profile</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Connecting your Google account is available on paid plans.
-                  </p>
-                </div>
-                <Link href="/settings#billing">
-                  <Button>See pricing</Button>
-                </Link>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Reply settings</CardTitle>
+          <CardDescription>
+            These defaults are used when generating review replies. Optional fields can be left blank.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {settingsError && (
+            <DashboardCallout variant="error">
+              <p>{settingsError}</p>
+            </DashboardCallout>
+          )}
+          {settingsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading reply settings…</p>
+          ) : (
+            <>
+              <FormField label="Business name" htmlFor="settings-business-name">
+                <Input
+                  id="settings-business-name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Your business name"
+                  autoComplete="organization"
+                />
+              </FormField>
+              <FormField label="Tone" htmlFor="settings-tone">
+                <Input
+                  id="settings-tone"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  placeholder={DEFAULT_TONE}
+                />
+              </FormField>
+              <FormField
+                label="Owner name or team name (optional)"
+                htmlFor="settings-owner"
+              >
+                <Input
+                  id="settings-owner"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  placeholder="e.g. Jamie or The Downtown Team"
+                  autoComplete="name"
+                />
+              </FormField>
+              <FormField
+                label="Contact preference (optional)"
+                htmlFor="settings-contact"
+              >
+                <Input
+                  id="settings-contact"
+                  value={contactPreference}
+                  onChange={(e) => setContactPreference(e.target.value)}
+                  placeholder='e.g. "Call the store directly" or "Email us directly"'
+                />
+              </FormField>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => void handleSaveReplySettings()}
+                  disabled={saveState === "saving"}
+                >
+                  {saveState === "saving" ? "Saving…" : "Save reply settings"}
+                </Button>
+                {saveState === "saved" && (
+                  <Badge variant="secondary" className="font-normal text-muted-foreground">
+                    Saved
+                  </Badge>
+                )}
               </div>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">Connect your Google account to manage locations and reviews.</p>
-                <form action="/api/google/oauth/start" method="get">
-                  <Button type="submit">Connect Google</Button>
-                </form>
-              </>
-            )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-          </div>
-
-        ) : (
-
-          <div className="space-y-3">
-
-            <div className="flex items-center gap-3">
-
-              <span className="text-sm">Connected ✅</span>
-
-              <form action="/api/google/locations/sync" method="post">
-
-                <Button type="submit" variant="secondary">Sync Locations</Button>
-
-              </form>
-
-              <DisconnectGoogleButton />
-
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                <span>Google Business Profile</span>
+                {!connLoading && gbpConnected && <StatusBadge tone="success">Connected</StatusBadge>}
+              </CardTitle>
+              <CardDescription>
+                {connLoading
+                  ? "Loading connection…"
+                  : gbpConnected
+                    ? `Locations synced: ${locations.length}`
+                    : "Connect to sync locations and reviews."}
+              </CardDescription>
             </div>
-
-            <div className="border rounded">
-
-              <div className="p-2 text-sm font-medium border-b">Locations</div>
-
-              <ul className="max-h-60 overflow-auto text-sm">
-
-                {Array.isArray(locations) && locations.length > 0 ? locations.map((l: any) => (
-
-                  <li key={l.id} className="p-2 border-b last:border-b-0">
-
-                    <div className="font-medium">{l.title || l.location_id}</div>
-
-                    <div className="text-muted-foreground text-xs">{l.location_id}</div>
-
-                  </li>
-
-                )) : <li className="p-2 text-muted-foreground">No locations yet. Click "Sync Locations".</li>}
-
-              </ul>
-
-            </div>
-
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <DashboardCallout variant="error">
+              <p>{error}</p>
+            </DashboardCallout>
+          )}
 
-        )}
+          {connLoading && (
+            <p className="text-sm text-muted-foreground">Loading Google connection…</p>
+          )}
 
-      </section>
+          {!connLoading && !gbpConnected && (
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Sync your locations and reviews so LocalLift can help you reply on Google Business
+                Profile.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={handleConnectGoogle}>Connect with Google</Button>
+                {error && (
+                  <Button type="button" variant="outline" onClick={() => void fetchConnectionData()}>
+                    Retry
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
-    </div>
+          {!connLoading && gbpConnected && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={handleSyncLocations} variant="secondary" disabled={isSyncing}>
+                  {isSyncing ? "Syncing…" : "Sync locations"}
+                </Button>
+                <Button onClick={handleDisconnect} variant="outline">
+                  Disconnect Google
+                </Button>
+              </div>
 
+              {locations.length > 0 ? (
+                <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+                  <div className="border-b border-border bg-muted/50 px-4 py-2.5 text-sm font-medium">
+                    Locations
+                  </div>
+                  <ul className="max-h-80 divide-y divide-border overflow-auto">
+                    {locations.map((loc) => (
+                      <li key={loc.id} className="px-4 py-3.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">
+                              {loc.title || loc.locationName}
+                            </div>
+                            {loc.primaryCategory && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {loc.primaryCategory}
+                              </div>
+                            )}
+                          </div>
+                          <Badge
+                            variant={loc.isSuspended ? "destructive" : "secondary"}
+                            className="shrink-0"
+                          >
+                            {loc.isSuspended ? "Suspended" : "Active"}
+                          </Badge>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No locations synced yet. Click &quot;Sync locations&quot; to pull them from Google.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="border-t border-border pt-6">
+        <p className="mb-3 text-sm text-muted-foreground">Signed in as your account.</p>
+        <SignOutButton className="w-full sm:w-auto" />
+      </div>
+    </DashboardPage>
   );
+}
 
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardPage width="sm">
+          <p className="text-sm text-muted-foreground">Loading settings…</p>
+        </DashboardPage>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
+  );
 }

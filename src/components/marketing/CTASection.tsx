@@ -47,7 +47,7 @@ export function CTASection() {
             className="bg-[#F97316] hover:bg-[#EA580C] text-white shadow-lg group"
             asChild
           >
-            <Link href="/content">
+            <Link href="/dashboard">
               Go to dashboard
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>

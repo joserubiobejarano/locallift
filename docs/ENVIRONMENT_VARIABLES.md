@@ -1,74 +1,89 @@
 # Environment Variables for LocalLift
 
-## Supabase
+## Database (Neon Postgres)
 
-### `NEXT_PUBLIC_SUPABASE_URL`
-- **Type**: Client (NEXT_PUBLIC_)
-- **Vercel Name**: `NEXT_PUBLIC_SUPABASE_URL`
-- **Description**: Your Supabase project URL
-- **Example**: `https://xxxxx.supabase.co`
+### `DATABASE_URL`
 
-### `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Type**: Client (NEXT_PUBLIC_)
-- **Vercel Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Description**: Supabase anonymous/public key (safe to expose to client)
-- **Example**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
-
-### `SUPABASE_SERVICE_ROLE_KEY`
 - **Type**: Server-only
-- **Vercel Name**: `SUPABASE_SERVICE_ROLE_KEY`
-- **Description**: Supabase service role key (admin access, NEVER expose to client)
-- **Example**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+- **Description**: Neon connection string (use the **pooled** connection for serverless/Vercel when available).
+- **Example**: `postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require`
+
+### `DATABASE_URL_UNPOOLED` (optional)
+
+- **Type**: Server-only
+- **Description**: Direct / unpooled URL for migrations or long-running clients.
+
+## Auth.js (NextAuth v5)
+
+### `AUTH_SECRET`
+
+- **Type**: Server-only
+- **Description**: Secret for signing cookies / JWT. Generate with `openssl rand -base64 32`.
+- **Vercel**: set in project env settings.
+
+### `AUTH_URL` (recommended in production)
+
+- **Type**: Server-only (some hosts)
+- **Description**: Canonical public URL of **this Next.js app** (e.g. `https://app.example.com` or `http://localhost:3000` locally). Auth.js uses it to resolve OAuth callbacks and may rewrite middleware request URLs.
+- **Important**: Must be your app’s origin, **not** a Neon database host or Neon Auth URL. If `AUTH_URL` points at the wrong host, sessions and redirects break locally (e.g. login redirects go to the wrong domain). For local dev, set `AUTH_URL=http://localhost:3000` (same as `NEXT_PUBLIC_APP_URL`).
+
+### `AUTH_TRUST_HOST` (optional)
+
+- **Type**: Server-only
+- **Description**: Set to `true` behind some proxies if Auth.js warns about untrusted hosts.
+
+**Google OAuth (login):** In Google Cloud Console, add **Authorized redirect URI**:
+
+`{NEXT_PUBLIC_APP_URL}/api/auth/callback/google`
+
+## Google (Business Profile OAuth)
+
+### `GOOGLE_CLIENT_ID`
+
+- **Type**: Server-only (also used by NextAuth Google provider)
+
+### `GOOGLE_CLIENT_SECRET`
+
+- **Type**: Server-only
+
+**GBP redirect URI**: `{NEXT_PUBLIC_APP_URL}/api/google/oauth/callback`
 
 ## OpenAI
 
 ### `OPENAI_API_KEY`
-- **Type**: Server-only
-- **Vercel Name**: `OPENAI_API_KEY`
-- **Description**: OpenAI API key for content generation and review replies
-- **Example**: `sk-...`
 
-## Google
-
-### `GOOGLE_CLIENT_ID`
 - **Type**: Server-only
-- **Vercel Name**: `GOOGLE_CLIENT_ID`
-- **Description**: Google OAuth client ID for Google Business Profile integration
-- **Example**: `xxxxx.apps.googleusercontent.com`
-
-### `GOOGLE_CLIENT_SECRET`
-- **Type**: Server-only
-- **Vercel Name**: `GOOGLE_CLIENT_SECRET`
-- **Description**: Google OAuth client secret
-- **Example**: `GOCSPX-xxxxx`
 
 ## Stripe
 
 ### `STRIPE_SECRET_KEY`
+
 - **Type**: Server-only
-- **Vercel Name**: `STRIPE_SECRET_KEY`
-- **Description**: Stripe secret key for API operations
-- **Example**: `sk_live_...` or `sk_test_...`
 
 ### `STRIPE_WEBHOOK_SECRET`
-- **Type**: Server-only
-- **Vercel Name**: `STRIPE_WEBHOOK_SECRET`
-- **Description**: Stripe webhook signing secret for verifying webhook events
-- **Example**: `whsec_...`
 
-### `STRIPE_PRICE_STARTER`
 - **Type**: Server-only
-- **Vercel Name**: `STRIPE_PRICE_STARTER`
-- **Description**: Stripe price ID for the starter subscription plan (optional, used in settings page)
-- **Example**: `price_xxxxx`
+
+### `STRIPE_STARTER_PRICE_ID`
+
+- **Type**: Server-only
+- **Description**: Stripe Price ID for `/api/stripe/checkout`.
+
+### `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (optional)
+
+- **Type**: Client
 
 ## App URLs
 
 ### `NEXT_PUBLIC_APP_URL`
-- **Type**: Client (NEXT_PUBLIC_)
-- **Vercel Name**: `NEXT_PUBLIC_APP_URL`
-- **Description**: Base URL of your application (used for OAuth redirects, Stripe callbacks, etc.)
-- **Local**: `http://localhost:3000`
-- **Vercel Staging**: `https://locallift-staging.vercel.app` (or your actual Vercel domain)
-- **Note**: The code includes a fallback to `http://localhost:3000` if not set, but you should set this explicitly in Vercel
 
+- **Type**: Client (NEXT_PUBLIC_)
+- **Local**: `http://localhost:3000`
+
+## Removed (Supabase)
+
+Do **not** set these anymore:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`

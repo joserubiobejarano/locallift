@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { getAppUrl } from "@/lib/env";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -16,47 +15,35 @@ export default function SignupPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const supabase = supabaseBrowser();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
+
+    const reg = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, fullName }),
     });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      const { data, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !data.session) {
-        toast.error(sessionError?.message || "No session");
-        return;
-      }
-
-      await fetch("/api/auth/set", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      });
-
-      window.location.href = "/content";
+    const data = await reg.json().catch(() => ({}));
+    if (!reg.ok) {
+      toast.error(data.error || "Could not create account");
+      return;
     }
+
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      toast.error("Account created but sign-in failed. Try logging in.");
+      return;
+    }
+
+    window.location.href = "/dashboard";
   }
 
   async function signInWithGoogle() {
-    const supabase = supabaseBrowser();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${getAppUrl()}/auth/callback`,
-        queryParams: { prompt: "consent" },
-      },
-    });
-
-    if (error) alert(error.message);
+    await signIn("google", { callbackUrl: "/dashboard" });
   }
 
   return (
@@ -86,9 +73,10 @@ export default function SignupPage() {
         />
         <Input
           type="password"
-          placeholder="Password"
+          placeholder="Password (min 8 characters)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          minLength={8}
           required
         />
         <Button type="submit" className="w-full">
@@ -104,4 +92,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

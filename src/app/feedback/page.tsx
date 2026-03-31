@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function FeedbackPage() {
   const [message, setMessage] = useState("");
@@ -19,24 +18,27 @@ export default function FeedbackPage() {
 
     setLoading(true);
     try {
-      const supabase = supabaseBrowser();
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const { error } = await supabase.from("feedback").insert({
-        user_id: session?.user?.id || null,
-        message,
-        category: category || null,
-        url: typeof window !== "undefined" ? window.location.href : null,
-        browser: typeof window !== "undefined" ? navigator.userAgent : null,
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          category: category || null,
+          url: typeof window !== "undefined" ? window.location.href : null,
+          browser: typeof window !== "undefined" ? navigator.userAgent : null,
+        }),
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Request failed");
+      }
 
       setSubmitted(true);
       setMessage("");
       setCategory("");
-    } catch (err: any) {
-      alert(err?.message || "Failed to submit feedback");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to submit feedback");
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export default function FeedbackPage() {
         <CardHeader>
           <CardTitle>Send Feedback</CardTitle>
           <CardDescription>
-            We'd love to hear your thoughts, suggestions, or report any issues.
+            We&apos;d love to hear your thoughts, suggestions, or report any issues.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,7 +86,7 @@ export default function FeedbackPage() {
                 Message <span className="text-destructive">*</span>
               </label>
               <Textarea
-                placeholder="Tell us what's on your mind..."
+                placeholder="Tell us what&apos;s on your mind..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -100,4 +102,3 @@ export default function FeedbackPage() {
     </div>
   );
 }
-

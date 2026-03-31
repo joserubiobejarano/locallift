@@ -3,62 +3,44 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { getAppUrl } from "@/lib/env";
+import { safeRelativeRedirect } from "@/lib/safe-redirect";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const isDemo = searchParams?.get("demo") === "1";
+  const callbackParam = searchParams?.get("callbackUrl") ?? undefined;
+  const afterLoginUrl = isDemo
+    ? "/dashboard?demo=1"
+    : safeRelativeRedirect(callbackParam, "/dashboard");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const supabase = supabaseBrowser();
-    const { error } = await supabase.auth.signInWithPassword({
+
+    const res = await signIn("credentials", {
       email,
       password,
+      redirect: false,
     });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      const { data, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !data.session) {
-        toast.error(sessionError?.message || "No session");
-        return;
-      }
-
-      await fetch("/api/auth/set", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      });
-
-      const redirectUrl = isDemo ? "/content?demo=1" : "/content";
-      window.location.href = redirectUrl;
+    if (res?.error) {
+      toast.error(res.error || "Could not sign in");
+      return;
     }
+
+    window.location.href = afterLoginUrl;
   }
 
   async function signInWithGoogle() {
-    const supabase = supabaseBrowser();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${getAppUrl()}/auth/callback`,
-        queryParams: { prompt: "consent" },
-      },
+    await signIn("google", {
+      callbackUrl: afterLoginUrl,
     });
-
-    if (error) alert(error.message);
   }
 
   return (
@@ -115,4 +97,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

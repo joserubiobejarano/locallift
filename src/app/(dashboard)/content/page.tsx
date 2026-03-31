@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +13,15 @@ import remarkGfm from "remark-gfm";
 import { useCurrentPlan } from "@/lib/use-current-plan";
 import { isPaidUser, isTrialing } from "@/lib/plan";
 import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
+import {
+  isDemoMode,
+  DEMO_LIMITS,
+  DEMO_STORAGE_KEYS,
+  incrementDemoUsage,
+  checkDemoLimit
+} from "@/lib/demo";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { toast } from "sonner";
 
 type GeneratorType = "blog" | "gbp_post" | "faq";
 
@@ -30,8 +41,17 @@ type Project = {
 };
 
 export default function ContentPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading…</div>}>
+      <ContentPageInner />
+    </Suspense>
+  );
+}
+
+function ContentPageInner() {
   const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
   const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
+  const [showPlanGateModal, setShowPlanGateModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [type, setType] = useState<GeneratorType>("blog");
   const [businessName, setBusinessName] = useState("");
@@ -42,6 +62,9 @@ export default function ContentPage() {
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const searchParams = useSearchParams();
+  const isDemo = isDemoMode(searchParams);
 
   const generatorOptions: Array<{ value: GeneratorType; label: string }> =
     useMemo(
@@ -54,6 +77,29 @@ export default function ContentPage() {
     );
 
   const loadProjects = useCallback(async () => {
+    if (isDemo) {
+      // Load sample projects for demo
+      setProjects([
+        {
+          id: "demo-1",
+          title: "[Legacy sample] Review marketing — Joe's Pizza",
+          type: "blog",
+          input: { businessName: "Joe's Pizza", city: "New York", service: "Pizza", tone: "Friendly" },
+          output_md: "# The Best Pizza in NYC\n\nCome visit Joe's Pizza for an authentic slice...",
+          created_at: new Date().toISOString()
+        },
+        {
+          id: "demo-2",
+          title: "[Legacy sample] Short post — Joe's Pizza",
+          type: "gbp_post",
+          input: { businessName: "Joe's Pizza", city: "New York", service: "Pizza", tone: "Exciting" },
+          output_md: "🍕 Craving the perfect slice? Stop by Joe's Pizza today! #NYC #Pizza",
+          created_at: new Date(Date.now() - 86400000).toISOString()
+        }
+      ]);
+      return;
+    }
+
     try {
       const t = await ensureBrowserToken();
       console.log(
@@ -72,15 +118,23 @@ export default function ContentPage() {
       console.error(e);
       alert(e?.message || "Unable to load projects");
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => {
     (async () => {
-      const t = await ensureBrowserToken();
-      if (t) loadProjects();
+      if (isDemo) {
+        loadProjects();
+        // Pre-fill fields for demo
+        setBusinessName("Joe's Pizza");
+        setCity("New York");
+        setService("Pizza Restaurant");
+      } else {
+        const t = await ensureBrowserToken();
+        if (t) loadProjects();
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isDemo]);
 
   const disableGenerate =
     !businessName.trim() || !city.trim() || !service.trim() || loading;
@@ -88,12 +142,17 @@ export default function ContentPage() {
   async function onGenerate() {
     if (disableGenerate) return;
 
-    if (!hasPaidAccess) {
-      setShowUpgradeModal(true);
+    if (isDemo) {
+      if (checkDemoLimit(DEMO_STORAGE_KEYS.CONTENT_USED, DEMO_LIMITS.CONTENT)) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    } else if (!hasPaidAccess) {
+      setShowPlanGateModal(true);
       return;
     }
 
-    const t = await ensureBrowserToken();
+    const t = !isDemo ? await ensureBrowserToken() : null;
     setLoading(true);
     setMarkdown("");
 
@@ -107,6 +166,7 @@ export default function ContentPage() {
         headers: {
           "Content-Type": "application/json",
           ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          ...(isDemo ? { "x-demo": "true" } : {}),
         },
         body: JSON.stringify({ type, businessName, city, service, tone }),
       });
@@ -115,6 +175,11 @@ export default function ContentPage() {
       if (!res.ok) throw new Error(data.error || "Generation failed");
 
       setMarkdown(data.markdown || "");
+
+      if (isDemo) {
+        incrementDemoUsage(DEMO_STORAGE_KEYS.CONTENT_USED);
+        toast.success("Demo generation saved (legacy tool).");
+      }
     } catch (e: any) {
       alert(e?.message || "Something went wrong");
     } finally {
@@ -124,6 +189,11 @@ export default function ContentPage() {
 
   async function onSave() {
     if (!markdown) return;
+
+    if (isDemo) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     const t = await ensureBrowserToken();
     setSaving(true);
@@ -191,22 +261,36 @@ export default function ContentPage() {
   return (
     <div className="grid grid-cols-[1fr_320px] gap-6">
       <div className="space-y-6">
+        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 text-sm text-amber-950 dark:text-amber-100">
+          <p className="font-medium text-foreground">Legacy tool — not part of the review product</p>
+          <p className="mt-1 text-muted-foreground">
+            LocalLift is focused on your <strong>review inbox</strong> and <strong>AI replies</strong>. Use{" "}
+            <Link href="/reviews" className="underline underline-offset-2">
+              Reviews
+            </Link>{" "}
+            for replies and{" "}
+            <Link href="/settings" className="underline underline-offset-2">
+              Settings
+            </Link>{" "}
+            for reply defaults and Google Business Profile. This screen may be removed later.
+          </p>
+        </div>
         <div>
-          <h1 className="text-2xl font-semibold">Create Content</h1>
+          <h1 className="text-2xl font-semibold">Legacy content generator</h1>
           <p className="text-muted-foreground">
-            Generate ready-to-publish marketing content tailored to your
-            business.
+            Older marketing drafts (blog, posts, FAQs). Prefer Reviews and Settings for day-to-day work.
           </p>
         </div>
 
-        {planInfo && hasPaidAccess && (
+        {planInfo && hasPaidAccess && !isDemo && (
           <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
         )}
 
-        {!planLoading && !hasPaidAccess && (
+        {!planLoading && !hasPaidAccess && !isDemo && (
           <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 space-y-2">
             <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-              Upgrade to LocalLift Starter to generate Local SEO content.
+              Upgrade to LocalLift Starter to connect Google Business Profile, sync reviews, and use AI
+              reply drafts (this legacy generator is not the main product).
             </p>
           </div>
         )}
@@ -250,10 +334,10 @@ export default function ContentPage() {
           />
 
           <div className="flex flex-wrap gap-3">
-            <Button 
-              onClick={onGenerate} 
-              disabled={disableGenerate || (!hasPaidAccess && !planLoading)}
-              title={!hasPaidAccess ? "Premium feature" : undefined}
+            <Button
+              onClick={onGenerate}
+              disabled={disableGenerate || (!hasPaidAccess && !planLoading && !isDemo)}
+              title={!hasPaidAccess && !isDemo ? "Premium feature" : undefined}
             >
               {loading ? "Generating..." : "Generate"}
             </Button>
@@ -261,6 +345,7 @@ export default function ContentPage() {
               variant="secondary"
               onClick={onSave}
               disabled={!markdown || saving}
+              title={isDemo ? "Saving disabled in demo mode" : undefined}
             >
               {saving ? "Saving..." : "Save as Project"}
             </Button>
@@ -312,10 +397,20 @@ export default function ContentPage() {
         </div>
       </aside>
 
-      <PlanGateModal 
-        open={showUpgradeModal} 
-        onOpenChange={setShowUpgradeModal}
-        featureName="Local SEO content generation"
+      <PlanGateModal
+        open={showPlanGateModal}
+        onOpenChange={setShowPlanGateModal}
+        featureName="Syncing reviews from Google Business Profile, AI reply drafts, and posting replies"
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        description={
+          isDemo
+            ? "You've reached the demo limit for this legacy screen. Start your free trial for the full review inbox (sync, AI drafts, posting)."
+            : undefined
+        }
       />
     </div>
   );

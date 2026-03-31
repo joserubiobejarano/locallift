@@ -1,20 +1,19 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { signOut } from "next-auth/react";
 
-export default function SignOutButton() {
-  async function signOut() {
-    const supabase = supabaseBrowser();
-    await supabase.auth.signOut();
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+export default function SignOutButton({ className }: { className?: string }) {
+  async function signOutHandler() {
     await fetch("/api/auth/signout", { method: "POST" });
-    window.location.href = "/login";
+    await signOut({ callbackUrl: "/login" });
   }
 
   return (
-    <Button variant="secondary" onClick={signOut}>
+    <Button variant="secondary" className={cn(className)} onClick={signOutHandler}>
       Sign out
     </Button>
   );
 }
-

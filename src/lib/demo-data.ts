@@ -175,3 +175,52 @@ Here's an improved description for your profile:
 
 5. **Action shots** - Photos of food being prepared or served can create a sense of freshness and quality.`;
 
+
+
+export const demoProjects = [
+  {
+    id: "demo-project-1",
+    user_id: "demo-user",
+    title: "Why Local SEO Matters for Small Businesses",
+    type: "blog",
+    input: {
+      businessName: "BurgerMat",
+      city: "Madrid",
+      service: "Burger Restaurant",
+      tone: "Professional",
+    },
+    output_md: "# Why Local SEO Matters for Small Businesses\n\nIn today's digital age, having a strong online presence is crucial for small businesses. Local SEO helps you connect with customers in your area who are actively searching for your products or services.\n\n## Benefits of Local SEO\n\n1. **Increased Visibility:** Rank higher in local search results.\n2. **More Traffic:** Drive more foot traffic to your store.\n3. **Better Conversion Rates:** Target customers who are ready to buy.\n\n## How to Improve Your Local SEO\n\n- Optimize your Google Business Profile.\n- Get more reviews.\n- Use local keywords in your content.\n\nStart optimizing your local SEO today and watch your business grow!",
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-project-2",
+    user_id: "demo-user",
+    title: "New Summer Menu Launch",
+    type: "gbp_post",
+    input: {
+      businessName: "BurgerMat",
+      city: "Madrid",
+      service: "Summer Menu",
+      tone: "Exciting",
+    },
+    output_md: "☀️ **Summer is here at BurgerMat!** ☀️\n\nWe are excited to announce our new summer menu featuring fresh salads, refreshing drinks, and our limited-time BBQ Pineapple Burger! 🍍🍔\n\nCome visit us in Madrid and taste the flavors of summer. Perfect for a sunny day out with friends and family.\n\n#BurgerMat #SummerMenu #Madrid #Foodie #BBQBurger",
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-project-3",
+    user_id: "demo-user",
+    title: "FAQ: Delivery Options",
+    type: "faq",
+    input: {
+      businessName: "BurgerMat",
+      city: "Madrid",
+      service: "Delivery",
+      tone: "Helpful",
+    },
+    output_md: "### Frequently Asked Questions\n\n**Q: Do you offer delivery?**\n\nA: Yes, we offer delivery through our partners UberEats and Glovo. You can also order directly from our website for pickup.\n\n**Q: What is the delivery area?**\n\nA: We deliver within a 5km radius of our Madrid location.\n\n**Q: Is there a minimum order for delivery?**\n\nA: There is no minimum order, but a small delivery fee may apply depending on your location.",
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];

@@ -5,39 +5,54 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 
 import { resolveUser } from "@/lib/user-from-req";
-import { supabaseAsUser } from "@/lib/supabase/as-user";
-
-function getBearer(req: Request) {
-  const h = req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!h) return null;
-  const p = h.trim().split(" ");
-  return p.length === 2 && p[0].toLowerCase() === "bearer" ? p[1] : null;
-}
+import { sql } from "@/lib/db/neon";
+import { demoProjects } from "@/lib/demo-data";
 
 export async function GET(req: Request) {
   try {
+    const isDemo = req.headers.get("x-demo") === "true";
+
+    if (isDemo) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return NextResponse.json({ projects: demoProjects });
+    }
+
     const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const token = getBearer(req);
-    const db = token ? supabaseAsUser(token) : supabaseAsUser(""); // if no token, RLS will fail (401 above)
-    const { data, error } = await db
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
+    const data = await sql`
+      SELECT *
+      FROM public.projects
+      WHERE user_id = ${user.id}
+      ORDER BY created_at DESC
+    `;
 
     return NextResponse.json({ projects: data ?? [] });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("[projects.GET] error:", e);
-    return NextResponse.json({ error: e.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: (e as Error).message ?? "Server error" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const isDemo = req.headers.get("x-demo") === "true";
+
+    if (isDemo) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const body = await req.json();
+      const mockProject = {
+        id: "demo-new-project-" + Date.now(),
+        user_id: "demo-user",
+        title: body.title || "Demo Project",
+        type: body.type || "blog",
+        input: body.input || {},
+        output_md: body.output_md || "",
+        created_at: new Date().toISOString(),
+      };
+      return NextResponse.json({ project: mockProject });
+    }
+
     const user = await resolveUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -48,26 +63,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const token = getBearer(req);
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const db = supabaseAsUser(token);
-    const { data, error } = await db
-      .from("projects")
-      .insert({
-        user_id: user.id,
-        title,
-        type,
-        input,
-        output_md: output_md ?? null,
-      })
-      .select()
-      .single();
+    const rows = await sql`
+      INSERT INTO public.projects (user_id, title, type, input, output_md)
+      VALUES (
+        ${user.id},
+        ${title},
+        ${type},
+        ${input as object},
+        ${output_md ?? null}
+      )
+      RETURNING *
+    `;
 
-    if (error) throw error;
-
+    const data = rows[0];
     return NextResponse.json({ project: data });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("[projects.POST] error:", e);
-    return NextResponse.json({ error: e.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: (e as Error).message ?? "Server error" }, { status: 500 });
   }
 }

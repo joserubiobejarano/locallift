@@ -1,21 +1,11 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
 export const runtime = "nodejs";
 
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { supabaseFromRequest } from "@/lib/supabase/route";
-
-export async function POST(req: NextRequest) {
-  const { supabase } = supabaseFromRequest(req);
-
-  await supabase.auth.signOut();
-
+/** Clear demo cookie; session cookies are cleared by next-auth `signOut()` on the client. */
+export async function POST() {
   const cookieStore = await cookies();
-
-  // Clear Supabase auth cookies
-  cookieStore.delete("sb-access-token");
-  cookieStore.delete("sb-refresh-token");
-
+  cookieStore.set("ll_demo", "", { path: "/", maxAge: 0 });
   return NextResponse.json({ ok: true });
 }
-
-

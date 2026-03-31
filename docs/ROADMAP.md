@@ -4,244 +4,235 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 1: Monetization (NOW) ✅ Complete
+## 🎯 What is LocalLift?
 
-**Goal**: Implement single $14.99/mo plan with Stripe integration, plan gating, and foundation for growth.
+LocalLift is an **AI-powered platform for local businesses and agencies**. It helps them:
+- Generate local SEO content (blogs, GBP posts, FAQs)
+- Reply to customer reviews with AI
+- Audit and optimize Google Business Profiles
+- Connect their GBP to sync locations and reviews
+- Use an all-in-one dashboard for local growth
 
-### Status: ✅ Complete
-
-### 1.1. Stripe Subscription Plan ✅
-
-**Completed:**
-- ✅ Single "LocalLift Starter" plan at $14.99/month
-- ✅ 7-day free trial implementation
-- ✅ Stripe checkout integration with price ID from environment
-- ✅ Webhook handling for checkout.session.completed and customer.subscription.updated
-- ✅ Database fields: plan_type, plan_status, plan_current_period_end
-- ✅ Helper functions: isPaidUser(), isTrialing(), isFreeUser()
-- ✅ Plan status recognition: active | trialing | past_due | canceled
-
-**Expected Outcome**: Users can subscribe to LocalLift Starter with automatic subscription management.
+It includes a free audit funnel, a demo mode, and a subscription-based plan.
 
 ---
 
-### 1.2. Plan Gating Across App ✅
+## 📍 Current Status – Where We Are
 
-**Completed:**
-- ✅ Full plan gating on /reviews page (Google connection, sync, reply posting)
-- ✅ Full plan gating on /audit page (connected mode audits)
-- ✅ Full plan gating on /content page (content generation)
-- ✅ Plan gating on Google OAuth routes and API endpoints
-- ✅ Upgrade banners and modals for free users
-- ✅ Trial end date display for trialing users
-- ✅ Demo mode still works with sample data
+### ✅ Phase 1: Core Product (100% Complete)
 
-**Expected Outcome**: Free users see upgrade prompts, paid/trialing users have full access.
+**Goal**: Build the foundational product with all core features.
 
-**Goal**: Help users optimize their Google Business Profile with AI-powered suggestions.
+**Status**: ✅ **FULLY COMPLETE**
 
-#### For Users WITH GBP Connection (Owners/Managers)
+#### A) Authentication & User Management
+- ✅ Email/password authentication
+- ✅ Google OAuth login (for app access, NOT GBP connection)
+- ✅ Secure session management with Supabase
+- ✅ User profiles with business information
 
-**When Google is connected and locations exist:**
-- Display "Audit a connected location" section
-- Show dropdown with connected locations
-- One-click audit button → calls Business Profile API
-- Backend fetches:
-  - Business name, description, categories
-  - Hours, rating, review stats
-  - Photos count, posts activity
-  - Other management-accessible data
-- AI analyzes and generates:
-  - Overall profile health score
-  - Suggestions for name optimization
-  - Description improvements
-  - Category recommendations
-  - Photo strategy suggestions
-  - Posting frequency recommendations
+#### B) Dashboard & Navigation
+- ✅ Main dashboard with overview
+- ✅ Usage counters (posts, audits, review replies)
+- ✅ Sidebar navigation
+- ✅ Mobile-friendly responsive design
 
-**Status**: API infrastructure exists, UI needed
+#### C) Local SEO Content Generator
+- ✅ Blog post generation (hyper-local focus)
+- ✅ Google Business Profile post generation
+- ✅ FAQ generation
+- ✅ Local SEO AI Agent (business + location aware)
+- ✅ Neighborhood and landmark references
+- ✅ Project history and management
+- ✅ Copy-to-clipboard functionality
 
-#### For Users WITHOUT GBP Connection (Prospects)
+#### D) Review Reply Generator
+- ✅ Manual review entry (any platform)
+- ✅ AI-powered reply generation
+- ✅ Review draft saving
+- ✅ Review history tracking
+- ✅ Platform-specific tone adjustments
 
-**Option A: Paste GBP URL** (Recommended for Phase 1)
-- Simple input: "Paste your Google Business Profile URL or type business name + city"
-- Optional category selector
-- Backend (Phase 1): Use URL/name as context for LLM-generated audit
-- Backend (Future): Extract Place ID and call Google Places API for real data
+#### E) Profile Audit Tool
+- ✅ AI-powered profile audit
+- ✅ Dedicated `/free-audit` landing page
+- ✅ Lead capture via email
+- ✅ Visual audit report with scoring
+- ✅ Actionable recommendations
+- ✅ Demo version available
 
-**Option B: Minimal Form**
-- Business name + city required
-- Category optional
-- LLM generates smart, local audit without API calls
+#### F) Demo Mode
+- ✅ Fake reviews for testing
+- ✅ Fake locations for testing
+- ✅ Sample audit data
+- ✅ Ability to generate sample replies/content
+- ✅ No Google connection required
+- ✅ Perfect for demos and testing
 
-**Implementation Plan:**
-1. Create `/profile-audit` page in dashboard
-2. Detect if Google is connected
-3. Show appropriate UI (connected vs. manual entry)
-4. Build audit API endpoint that:
-   - For connected: Calls Business Profile API
-   - For manual: Uses LLM with provided context
-5. Display audit results with score and actionable suggestions
-
-**Expected Outcome**: Users can audit any business profile, generating value for prospects and current customers.
-
----
-
-### 1.3. Free Audit Landing Page ✅
-
-**Completed:**
-- ✅ Standalone /free-audit page (no login required)
-- ✅ Form fields: business name/URL, city, category, email
-- ✅ Uses existing quick audit function (openai.generateProfileAudit)
-- ✅ Stores leads in Supabase "leads" table
-- ✅ Beautiful visual report with score (colored), indicators, priorities
-- ✅ CTA: "Want ongoing optimization? Try LocalLift Starter ($14.99/mo)"
-
-**Expected Outcome**: Prospects can try the product without signing up, generating leads.
-
-**Goal**: Professional landing page and smooth onboarding flow.
-
-**Landing Page (`/`):**
-- H1: "Your AI assistant for local business profiles"
-- 3 feature blocks: Content, Reviews, Profile Audit
-- CTA: "Start free" → `/signup`
-- Simple, clean design
-- Brief value proposition
-
-**Onboarding Flow (Post-signup):**
-- Step 1: Business name, city, category
-- Step 2: Main platform preference (Google, TripAdvisor, etc.)
-- Store in `profiles` table (fields already exist)
-- Redirect to dashboard
-
-**Expected Outcome**: Professional first impression and smooth user onboarding.
+#### G) Frontend & UX
+- ✅ Homepage redesigned and implemented
+- ✅ Legal pages (privacy, terms, contact)
+- ✅ Feedback system (form + DB storage)
+- ✅ Footer with all links
+- ✅ Mobile-responsive design
+- ✅ Modern UI with Tailwind + Radix
 
 ---
 
-## Phase 2: Product Value ✅ Complete
+### ✅ Phase 2: Monetization & Billing (100% Complete)
 
-**Goal**: Enhance product value with local SEO agent, usage limits, and analytics.
+**Goal**: Implement subscription system with Stripe integration and plan gating.
 
-### Status: ✅ Complete
+**Status**: ✅ **FULLY COMPLETE**
 
-### 2.1. Local SEO AI Agent ✅
+#### A) Stripe Integration
+- ✅ Single plan: **LocalLift Starter – $14.99/month**
+- ✅ 7-day free trial
+- ✅ Stripe checkout flow
+- ✅ Stripe customer portal
+- ✅ Webhook handling (subscription events)
+- ✅ Secure payment processing
 
-**Completed:**
-- ✅ Created src/lib/agents/localSeoAgent.ts
-- ✅ System prompt includes business name, city, category, tone
-- ✅ Knowledge of city neighborhoods, landmarks, local culture
-- ✅ generateLocalContent() function for business-specific content
-- ✅ Updated /content page to use local SEO agent instead of generic ChatGPT
-
-**Expected Outcome**: Content is less generic and more business-specific with local references.
-
-### 2.2. Monthly Usage Limits ✅
-
-**Completed:**
-- ✅ Usage tracking: ai_posts_used, audits_used, usage_reset_date
-- ✅ Limits for LocalLift Starter: 20 posts/month, 5 audits/month
+#### B) Usage Limits System
+- ✅ 20 posts/month limit
+- ✅ 5 audits/month limit
 - ✅ Unlimited review replies
-- ✅ Usage reset logic on monthly cycle
-- ✅ Usage display on /dashboard
-- ✅ Limit checking before generation with error messages
+- ✅ Monthly usage reset logic
+- ✅ Usage tracking in database
+- ✅ Usage display on dashboard
 
-**Expected Outcome**: Users see their usage and are prevented from exceeding limits.
-
----
-
-## Phase 3: Foundation ✅ Complete
-
-**Goal**: Legal pages, contact, and feedback infrastructure.
-
-### Status: ✅ Complete
-
-### 3.1. Legal Pages ✅
-
-**Completed:**
-- ✅ /contact page
-- ✅ /privacy page
-- ✅ /terms page
-- ✅ /legal page
-- ✅ /feedback page with form submission
-- ✅ Feedback table in Supabase
-- ✅ Footer component with links to all pages
-
-**Expected Outcome**: Professional legal foundation and user feedback collection.
+#### C) Plan Gating
+- ✅ Block content generation above quota
+- ✅ Block audits above quota
+- ✅ Block Google features if not subscribed
+- ✅ Upgrade prompts for free users
+- ✅ Trial end date display
+- ✅ Billing UI in Settings page
 
 ---
 
-## Phase 4: Google Business Profile Wiring 🚧 Partial
+### ✅ Phase 3: Google Business Profile Infrastructure (70% Complete)
 
-**Goal**: Make Google integration fully functional (behind feature flag if needed).
+**Goal**: Build complete GBP integration for location sync, review sync, and reply posting.
 
-**Prerequisites**: Access to at least one real GBP location (your own or test client).
+**Status**: 🚧 **BACKEND COMPLETE – UI PARTIALLY DONE**
 
-### 2.1. Finish Google Flows 🚧 70% Complete
+#### ✅ Backend (100% Complete)
+- ✅ GBP OAuth flow
+- ✅ Token refresh flow
+- ✅ Google API helpers
+- ✅ Sync GBP locations endpoint
+- ✅ Sync GBP reviews endpoint
+- ✅ Post replies to Google reviews endpoint
+- ✅ Secure token storage (encrypted)
+- ✅ RLS rules for connections, reviews, locations
+- ✅ Database schema for GBP data
 
-**Completed:**
-- ✅ OAuth connection flow
-- ✅ Location syncing infrastructure
-- ✅ Review syncing infrastructure
-- ✅ Reply posting infrastructure
+#### 🚧 UI (Partially Complete)
+**Remaining UI Work:**
 
-**In Progress:**
-- 🚧 Settings page improvements:
-  - Display connected email
-  - Show list of synced locations
-  - Add toggle: "Enable auto-sync of reviews" (store in `automation_prefs`)
-  - Disconnect option
+**Settings Page Needs:**
+- [ ] Display connected GBP account email
+- [ ] Show list of connected locations
+- [ ] "Disconnect Google" button
+- [ ] Auto-sync toggle option
 
-**Remaining:**
-- ⏳ Reviews page enhancements:
-  - Location dropdown (if user has multiple locations)
-  - "Sync reviews" button that calls `/api/google/reviews/sync`
-  - Info box if no locations: "No Google location found. You can still paste reviews manually."
-  - Display synced reviews with status (new, replied, queued)
+**Reviews Page Needs:**
+- [ ] Location selector dropdown (for multiple locations)
+- [ ] "Sync reviews now" button
+- [ ] Review status badges (new / replied / error)
+- [ ] Loading and error states
 
-**Testing Strategy:**
-- Mock data in Supabase (fake `gbp_locations` and `reviews`) for UI testing
-- Test with real GBP when available
-- Feature flag for gradual rollout
-
-**Expected Outcome**: Fully functional Google Business Profile integration for users who connect their account.
+**Note**: All backend functions exist. This is pure UI integration work.
 
 ---
 
-## Phase 7: Automation & n8n 🔮 Future
+## 🔮 What's NOT Built Yet (Future Phases)
+
+### Phase 4: Pre-Launch Polish (Not Started)
+
+**Goal**: Final testing, error logging, and performance optimization before launch.
+
+**Prerequisites**: Access to a real Google Business Profile for end-to-end testing.
+
+#### Testing
+- [ ] End-to-end GBP testing with real location
+- [ ] Test OAuth connection flow
+- [ ] Test location sync
+- [ ] Test review sync
+- [ ] Test reply posting
+- [ ] Test all rate limits
+- [ ] Test onboarding flow
+- [ ] Test sign-in / sign-up
+- [ ] Test free audit funnel
+- [ ] Test Stripe integration
+- [ ] Test demo mode
+
+#### Error Logging & Monitoring
+- [ ] Implement error tracking (Sentry recommended)
+- [ ] User-friendly error messages
+- [ ] Error reporting system
+- [ ] API error handling improvements
+
+#### Performance
+- [ ] Load testing
+- [ ] Database query optimization
+- [ ] API response time monitoring
+- [ ] Frontend performance audit
+
+#### UI Polish
+- [ ] Final design review
+- [ ] Mobile responsiveness check
+- [ ] Accessibility improvements
+- [ ] Loading states everywhere
+
+---
+
+### Phase 5: Advanced Features (Future)
+
+**Goal**: Add premium features for power users and agencies.
+
+**Status**: 🔮 **NOT STARTED**
+
+#### Features to Build
+- [ ] Scheduled posts (via n8n)
+- [ ] Rank tracking / local keyword monitoring
+- [ ] Competitor insights
+- [ ] GBP change protection (alert if photos/categories change)
+- [ ] Multi-location support (for agencies)
+- [ ] Multi-platform review integrations:
+  - Yelp
+  - TripAdvisor
+  - Facebook
+  - Apple Maps
+
+**Expected Outcome**: Advanced features for power users and agencies.
+
+---
+
+### Phase 6: Automation & n8n (Future)
 
 **Goal**: Automated workflows that run in the background.
+
+**Status**: 🔮 **NOT STARTED**
 
 **Prerequisites**: 
 - At least one real GBP connection working
 - n8n instance set up (self-hosted or cloud)
 
-### 3.1. Google Review Automation
-
+#### Google Review Automation
 **n8n Workflow:**
 1. Cron trigger (every 3 hours)
-2. HTTP request → Call `/api/google/reviews/sync` for each location where `automation_prefs.auto_sync_reviews = true`
+2. HTTP request → Call `/api/google/reviews/sync` for each location where auto-sync is enabled
 3. For each new review:
    - Call `/api/openai/review-reply` to generate reply
-   - If rating ≥ 4 AND `automation_prefs.auto_post_positive = true`:
+   - If rating ≥ 4 AND auto-post enabled:
      - Call `/api/google/replies` to post automatically
    - Else (rating 1-3):
      - Save as queued, send email notification
 4. Log all actions to `review_logs` table
 
-**Database:**
-- Create `automation_prefs` table (or add to existing)
-  - `user_id`
-  - `location_id` (nullable for global settings)
-  - `auto_sync_reviews` (boolean)
-  - `auto_post_positive` (boolean)
-  - `notification_email` (nullable)
-- Create `review_logs` table
-  - `id`, `user_id`, `review_id`, `action`, `status`, `created_at`
-
-**Expected Outcome**: Hands-off review management for positive reviews, with manual approval for critical ones.
-
-### 3.2. Content Automation
-
+#### Content Automation
 **Monthly Content Suggestions:**
 - Cron: First of each month
 - For each active user:
@@ -250,10 +241,7 @@ This document outlines the development roadmap for LocalLift, organized into pha
   - Generate FAQ suggestions (based on review trends)
   - Email summary: "Your content ideas for [Month]"
 
-**Expected Outcome**: Users receive monthly inspiration without logging in.
-
-### 3.3. Multi-Platform Routing (Future)
-
+#### Multi-Platform Routing
 **Long-term vision**: Support multiple review platforms
 - Start with manual entry for non-Google platforms
 - Research APIs for: Apple Maps, Bing, TripAdvisor, Yelp, TheFork
@@ -265,50 +253,27 @@ This document outlines the development roadmap for LocalLift, organized into pha
 - Scraping (legal considerations)
 - Paid API access
 
----
-
-### 6.1. Scheduled Posts (n8n)
-- Automated content scheduling
-- Integration with n8n workflows
-
-### 6.2. Rank Tracking
-- Track local search rankings
-- Competitor analysis
-
-### 6.3. Competitor Insights
-- Compare with competitors
-- Identify opportunities
-
-### 6.4. Multi-Location
-- Support for multiple business locations
-- Centralized management
-
-### 6.5. GBP Change Protection
-- Monitor for unauthorized changes
-- Alert system
-
-**Expected Outcome**: Advanced features for power users and agencies.
+**Expected Outcome**: Hands-off review management and content suggestions.
 
 ---
 
-## Phase 7: Automation & n8n 🔮 Future
+### Phase 7: Analytics & Reporting (Future)
 
 **Goal**: Provide insights and support agency workflows.
 
-### 4.1. Simple Analytics
+**Status**: 🔮 **NOT STARTED**
 
+#### Simple Analytics Dashboard
 **Overview Dashboard:**
 - Reviews replied this week
 - Content pieces generated this month
 - Average star rating (from synced reviews)
 - Reply rate percentage
 - Charts: Review volume over time, rating distribution
+- Trend cards with month-over-month comparisons
 
-**Expected Outcome**: Users see their activity and progress at a glance.
-
-### 4.2. Reporting & Exports
-
-**Monthly Report:**
+#### Monthly Reports
+**Automated Report Generation:**
 - PDF or HTML export
 - Includes:
   - Review summary (count, average rating, reply rate)
@@ -316,11 +281,9 @@ This document outlines the development roadmap for LocalLift, organized into pha
   - Profile audit results
   - Recommendations for next month
 - "Download Monthly Report" button on Overview
+- Shareable reports for business owners and agency clients
 
-**Expected Outcome**: Shareable reports for business owners and agency clients.
-
-### 4.3. Agency Mode (v2 Feature)
-
+#### Agency Mode (v2 Feature)
 **Multi-Profile Support:**
 - One account managing multiple businesses
 - `accounts` table (agency/team)
@@ -337,122 +300,220 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ---
 
-## Phase 5: Pre-Launch 🔮 Future
+## 🎯 Immediate Next Steps (Developer Guide)
 
-**Goal**: Full GBP testing, error logging, performance checks.
+Here's the exact sequence to follow next:
 
-**Prerequisites**: Core features stable and valuable.
+### ▶ STEP 1 — Finish GBP UI Wiring (CURRENT PRIORITY)
 
-### 5.1. Full GBP Testing
-- End-to-end testing with real Google Business Profile
-- Test all sync flows
-- Verify webhook reliability
+**All backend is done. This is pure UI work.**
 
-### 5.2. Error Logging
-- Comprehensive error tracking
-- User-friendly error messages
-- Error reporting system
+#### Settings Page
+- [ ] Show connected GBP email
+- [ ] Show list of locations
+- [ ] Add "Disconnect Google" button
+- [ ] Add auto-sync toggle
 
-### 5.3. Performance Checks
-- Load testing
-- Database optimization
-- API response time monitoring
+#### Reviews Page
+- [ ] Add location selector dropdown
+- [ ] Add "Sync reviews now" button
+- [ ] Add review status badges
+- [ ] Add loading & error states
 
-**Expected Outcome**: Production-ready system with monitoring and reliability.
+**Estimated Time**: 1-2 days
 
 ---
 
-## Use Cases by Theme
+### ▶ STEP 2 — Improve Demo Mode
 
-### A. Review & Reputation Management
+**Add better demo experience:**
+- [ ] Top banner "You're in demo mode"
+- [ ] Limit demo items (3 replies, 2 posts)
+- [ ] Disable "Post to Google" in demo
+- [ ] Add modal prompting signup after limits
 
-**✅ Current:**
-- AI replies to Google reviews (manual paste)
+**Estimated Time**: 1 day
+
+---
+
+### ▶ STEP 3 — Finalize Audit Funnel
+
+**Polish the free audit landing page:**
+- [ ] Improve audit results layout
+- [ ] Add CTA banner at bottom: "Want full access? Try LocalLift free for 7 days"
+- [ ] Add social proof elements
+- [ ] Optimize conversion flow
+
+**Estimated Time**: 1 day
+
+---
+
+### ▶ STEP 4 — Add Analytics Section
+
+**In `/dashboard` show:**
+- [ ] Content generated this month
+- [ ] Reviews replied
+- [ ] Audits run
+- [ ] Remaining quota
+- [ ] Trend cards (vs. last month)
+- [ ] Simple charts
+
+**Estimated Time**: 2 days
+
+---
+
+### ▶ STEP 5 — Implement Plan Gating Everywhere
+
+**Double-check UI blocks users properly:**
+- [ ] Reviews posting → only for subscribed users
+- [ ] Content generation limit enforcement
+- [ ] Audit limit enforcement
+- [ ] Show upgrade CTA in all gated areas
+- [ ] Test trial expiration flow
+
+**Estimated Time**: 1 day
+
+---
+
+### ▶ STEP 6 — Pre-Launch QA
+
+**Once you have access to a real GBP:**
+- [ ] Test connection
+- [ ] Test location sync
+- [ ] Test review sync
+- [ ] Test posting replies
+- [ ] Test rate limits
+- [ ] Test onboarding flow
+- [ ] Test sign-in / sign-up
+- [ ] Test free audit
+- [ ] Test Stripe
+- [ ] Test demo mode
+
+**Estimated Time**: 2-3 days
+
+---
+
+### ▶ STEP 7 — Deploy Marketing Assets
+
+**Improve marketing presence:**
+- [ ] Improve homepage hero copy
+- [ ] Create a "Why LocalLift?" page
+- [ ] Add case studies (dummy for now)
+- [ ] Add testimonials section
+- [ ] SEO optimization
+
+**Estimated Time**: 2-3 days
+
+---
+
+## 📊 Key Features Available RIGHT NOW
+
+### Production-Ready Features
+
+✅ **Authentication System**
+- Email/password signup/login
+- Google OAuth for app access
+- Secure session management
+
+✅ **Content Generator**
+- Blog posts (hyper-local)
+- GBP posts
+- FAQs
+- Local SEO agent
+- Usage limits (20/month)
+- Project history
+
+✅ **Review Management**
 - Manual review entry
+- AI reply generation
+- Save reply drafts
+- Track review statuses
+- View history
+- Unlimited replies
 
-**🚧 Phase 2:**
-- Synced reviews from GBP
-- Queue workflow (approve before posting)
+✅ **Audit Tool**
+- `/free-audit` landing page
+- AI audit report with scoring
+- Lead capture via email
+- Demo version in `/demo`
+- Great for marketing
 
-**🔮 Phase 3:**
-- Auto-reply to 4-5★ reviews
-- Review insights ("Top complaints", "Most mentioned strengths")
-- FAQ/post ideas based on reviews
-- Reputation alerts (email notifications for negative reviews)
+✅ **Demo Environment**
+- Fake location
+- Fake reviews
+- Sample audit
+- Sample content
+- Sandbox mode for testing
 
-**🔮 Future:**
-- Multi-platform reviews (TripAdvisor, Yelp, etc.)
-- Advanced analytics (sentiment trends, competitor comparison)
+✅ **Billing System (Stripe)**
+- Single plan: $14.99/month
+- 7-day trial
+- Webhooks
+- Subscription gating
+- Billing portal
+- Limits enforced
 
----
-
-### B. Local SEO Content
-
-**✅ Current:**
-- Hyper-local blog posts
-- GBP post drafts
-- FAQ generation
-
-**🚧 Phase 1.1:**
-- Enhanced prompts for neighborhood focus
-- Topic/angle field for specificity
-
-**🔮 Phase 3:**
-- Content calendar (4 suggested posts/month with dates)
-- Seasonal content suggestions
-- Review-based content ideas
-
-**🔮 Future:**
-- Content scheduling (direct GBP posting)
-- A/B testing for post performance
-- Content performance tracking
+✅ **Frontend Polish**
+- New homepage
+- Footer + legal pages
+- Feedback page
+- Better UX everywhere
+- Mobile-friendly
 
 ---
 
-### C. Profile / Listing Optimization
+## 🛠️ Tech Stack
 
-**⏳ Phase 1.2:**
-- Profile audit for connected locations
-- Profile audit for prospects (URL paste)
+### Frontend
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS** + **Radix UI**
+- **Lucide React** (icons)
 
-**🔮 Future:**
-- Profile health score tracking over time
-- Image analysis and suggestions
-- Category optimization recommendations
-- Competitor profile comparison
+### Backend
+- **Next.js API Routes**
+- **Supabase** (Auth + DB + RLS)
+- **PostgreSQL** database
 
----
+### Integrations
+- **Google Business Profile API**
+- **Stripe** (payments)
+- **OpenAI** (GPT-4o-mini + custom local SEO agent)
 
-### D. Automation & Orchestration
-
-**🔮 Phase 3:**
-- Google review automation (n8n)
-- Content automation (monthly suggestions)
-- Email notifications
-
-**🔮 Future:**
-- Multi-platform routing
-- Custom workflow builder
-- Integration with other tools (Zapier, Make)
+### Future
+- **n8n** (workflow automation)
 
 ---
 
-### E. Reporting & Agency Use
+## 📈 Success Metrics
 
-**🔮 Phase 4:**
-- Simple analytics dashboard
-- Monthly report exports
-- Agency mode (multi-profile)
+### Phase 1-3 Success (Current)
+- ✅ Users can sign up and generate valuable content
+- ✅ Users can paste reviews and get AI replies
+- ✅ Profile audit provides actionable insights
+- ✅ Subscription system works end-to-end
+- ✅ Demo mode showcases product value
 
-**🔮 Future:**
-- Client portals
-- White-label options
-- Advanced analytics and insights
-- API access for agencies
+### Phase 4 Success (Pre-Launch)
+- [ ] At least 5 users connect their Google Business Profile
+- [ ] Reviews sync successfully from GBP
+- [ ] Users post replies through the platform
+- [ ] No critical bugs in production
+
+### Phase 5-6 Success (Advanced Features)
+- [ ] Automation runs without manual intervention
+- [ ] Positive reviews get auto-replied within hours
+- [ ] Users receive valuable monthly content suggestions
+
+### Phase 7 Success (Analytics)
+- [ ] Users check analytics dashboard regularly
+- [ ] Reports are downloaded and shared
+- [ ] At least one agency uses multi-profile features
 
 ---
 
-## Constraints & Reality Checks
+## 💡 Constraints & Reality Checks
 
 ### Current Limitations
 
@@ -472,63 +533,32 @@ This document outlines the development roadmap for LocalLift, organized into pha
 
 ### Strategy
 
-- **Build valuable features that work without GBP** (Phase 1)
-- **Make GBP integration optional enhancement** (Phase 2)
-- **When you have real GBP access, flip the switch** (Phase 2)
-- **Expand to automation** (Phase 3) only after core is stable
+- **Build valuable features that work without GBP** ✅ Done
+- **Make GBP integration optional enhancement** ✅ Done
+- **When you have real GBP access, flip the switch** 🚧 In Progress
+- **Expand to automation** 🔮 Future
 
 ---
 
-## Success Metrics
-
-### Phase 1 Success
-- [ ] Users can sign up and generate valuable content without any integrations
-- [ ] Users can paste reviews and get AI replies instantly
-- [ ] Profile audit provides actionable insights
-- [ ] Users complete onboarding and return to dashboard
-
-### Phase 2 Success
-- [ ] At least 5 users connect their Google Business Profile
-- [ ] Reviews sync successfully from GBP
-- [ ] Users post replies through the platform
-
-### Phase 3 Success
-- [ ] Automation runs without manual intervention
-- [ ] Positive reviews get auto-replied within hours
-- [ ] Users receive valuable monthly content suggestions
-
-### Phase 4 Success
-- [ ] Users check analytics dashboard regularly
-- [ ] Reports are downloaded and shared
-- [ ] At least one agency uses multi-profile features
-
-### Phase 5 Success
-- [ ] Free tier users convert to paid (target: 5-10% conversion)
-- [ ] Paid users stay subscribed (target: <10% churn/month)
-- [ ] Usage tracking accurately prevents abuse
-
----
-
-## Notes for Development
+## 📝 Notes for Development
 
 - **Feature Flags**: Use feature flags for gradual rollout of new features
 - **Error Handling**: Always provide fallback to manual mode if APIs fail
 - **User Feedback**: Watch what users actually do vs. what we expect
-- **Iterate Quickly**: Ship Phase 1 features, gather feedback, then move to Phase 2
-- **Stripe Last**: Don't block on payments until core value is proven
+- **Iterate Quickly**: Ship features, gather feedback, then iterate
+- **Test Thoroughly**: Test with real GBP before full launch
 
 ---
 
-## Questions to Answer as We Build
+## ❓ Questions to Answer as We Build
 
-1. **Phase 1**: What content types do users request most? What review platforms?
-2. **Phase 2**: How many locations do typical users manage? Any sync issues?
-3. **Phase 3**: What automation frequency do users prefer? How many want auto-post?
-4. **Phase 4**: What metrics matter most to users? What do they share with clients?
-5. **Phase 5**: What's the optimal free tier limit? What features justify Pro pricing?
+1. **Phase 4**: What content types do users request most? What review platforms?
+2. **Phase 5**: How many locations do typical users manage? Any sync issues?
+3. **Phase 6**: What automation frequency do users prefer? How many want auto-post?
+4. **Phase 7**: What metrics matter most to users? What do they share with clients?
 
 ---
 
-**Last Updated**: November 18, 2025
-**Current Focus**: Phase 4 - Google Business Profile Wiring (70% Complete)
-
+**Last Updated**: November 29, 2024  
+**Current Focus**: Phase 3 - Google Business Profile UI Wiring (70% Complete)  
+**Next Priority**: Complete GBP UI integration (Settings + Reviews pages)

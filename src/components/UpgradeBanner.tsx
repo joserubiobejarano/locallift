@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DashboardCallout } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import type { PlanStatus } from "@/lib/plan";
 import { isTrialing, isFreeUser } from "@/lib/plan";
@@ -14,30 +15,39 @@ export function UpgradeBanner({ planStatus, currentPeriodEnd }: UpgradeBannerPro
   if (isTrialing(planStatus) && currentPeriodEnd) {
     const trialEndDate = new Date(currentPeriodEnd).toLocaleDateString();
     return (
-      <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-4 space-y-2">
-        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-          Trial ends on {trialEndDate}. Upgrade now to continue using LocalLift Starter.
+      <DashboardCallout
+        variant="info"
+        action={
+          <Button asChild size="sm">
+            <Link href="/settings#billing">Upgrade now</Link>
+          </Button>
+        }
+      >
+        <p>
+          Trial ends on <span className="font-medium text-foreground">{trialEndDate}</span>. Upgrade to keep
+          syncing reviews, AI reply drafts, and posting to Google.
         </p>
-        <Link href="/settings#billing">
-          <Button size="sm">Upgrade Now</Button>
-        </Link>
-      </div>
+      </DashboardCallout>
     );
   }
 
   if (isFreeUser(planStatus)) {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 space-y-2">
-        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-          Upgrade to LocalLift Starter ($14.99/mo) to unlock this feature.
+      <DashboardCallout
+        variant="warning"
+        action={
+          <Button asChild size="sm">
+            <Link href="/settings#billing">Upgrade to Starter</Link>
+          </Button>
+        }
+      >
+        <p>
+          Upgrade to LocalLift Starter ($14.99/mo) to connect Google Business Profile, sync reviews, and
+          use AI reply drafts.
         </p>
-        <Link href="/settings#billing">
-          <Button size="sm">Upgrade to LocalLift Starter</Button>
-        </Link>
-      </div>
+      </DashboardCallout>
     );
   }
 
   return null;
 }
-

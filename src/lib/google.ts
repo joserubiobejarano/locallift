@@ -1,4 +1,5 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSql } from "@/lib/db/neon";
+import { updateGbpTokens } from "@/lib/db/gbp";
 import { getServerAppUrl } from "@/lib/env";
 
 const GOOGLE_AUTH_BASE = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -86,17 +87,16 @@ type Tokens = {
 };
 
 export async function getUserGoogleTokens(userId: string): Promise<Tokens | null> {
-  const admin = supabaseAdmin();
-
-  const { data, error } = await admin
-    .from("gbp_connections")
-    .select("access_token, refresh_token, expires_at, scope")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  return data as Tokens;
+  const sql = getSql();
+  const rows = await sql`
+    SELECT access_token, refresh_token, expires_at, scope
+    FROM public.gbp_connections
+    WHERE user_id = ${userId}
+    LIMIT 1
+  `;
+  const data = rows[0] as Tokens | undefined;
+  if (!data) return null;
+  return data;
 }
 
 function isExpired(expires_at: string, skewSec = 120): boolean {
@@ -124,22 +124,18 @@ export async function refreshIfNeeded(userId: string, tokens: Tokens): Promise<T
 
   const newTokens: Tokens = {
     access_token: json.access_token,
-    refresh_token: tokens.refresh_token, // usually unchanged
+    refresh_token: tokens.refresh_token,
     expires_at: new Date(Date.now() + json.expires_in * 1000).toISOString(),
     scope: json.scope ?? tokens.scope ?? null,
   };
 
-  // Save back using the secured RPC
-  const admin = supabaseAdmin();
-  const { error } = await admin.rpc("update_gbp_tokens", {
-    p_user_id: userId,
-    p_access_token: newTokens.access_token,
-    p_refresh_token: newTokens.refresh_token,
-    p_expires_at: newTokens.expires_at,
-    p_scope: newTokens.scope,
+  await updateGbpTokens({
+    userId,
+    accessToken: newTokens.access_token,
+    refreshToken: newTokens.refresh_token,
+    expiresAt: newTokens.expires_at,
+    scope: newTokens.scope ?? null,
   });
-
-  if (error) throw error;
 
   return newTokens;
 }
@@ -159,4 +155,3 @@ export async function googleFetch(
 
   return fetch(url, { ...opts, headers });
 }
-

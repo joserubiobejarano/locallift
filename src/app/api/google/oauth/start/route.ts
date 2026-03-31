@@ -5,23 +5,15 @@ import { NextResponse } from "next/server";
 import { googleAuthUrl } from "@/lib/google";
 import { resolveUser } from "@/lib/user-from-req";
 import { getServerAppUrl } from "@/lib/env";
-import { canUseGoogleConnection } from "@/lib/plan";
-import { getUserPlan } from "@/lib/plan-server";
+import { buildGoogleOAuthState } from "@/lib/google-oauth-state";
+
+// MVP: paid-plan gating for GBP connect removed for dev testing; restore getUserPlan + canUseGoogleConnection if needed.
 
 export async function GET(req: Request) {
   const user = await resolveUser(req);
   if (!user) return NextResponse.redirect(new URL("/login", getServerAppUrl()));
 
-  // Check plan gating
-  const plan = await getUserPlan(user.id);
-  if (!canUseGoogleConnection(plan)) {
-    return NextResponse.json(
-      { error: "Google connection is only available on paid plans" },
-      { status: 403 }
-    );
-  }
-
-  const state = user.id;
+  const state = buildGoogleOAuthState(user.id);
   const url = googleAuthUrl(state);
   console.log("[GBP OAuth] redirect:", url);
 
@@ -30,6 +22,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ redirect: url });
   }
 
-  return NextResponse.redirect(url, { status: 302 });
+  const res = NextResponse.redirect(url, { status: 302 });
+  res.cookies.set("ll_gbp_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 10 * 60,
+  });
+  return res;
 }
 

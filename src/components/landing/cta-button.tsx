@@ -2,24 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { supabaseBrowser } from "@/lib/supabase/client";
 
 export function CTAButton() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const { status } = useSession();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    supabaseBrowser()
-      .auth.getSession()
-      .then(({ data }) => {
-        setIsLoggedIn(!!data.session);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
+    setMounted(true);
   }, []);
 
-  if (isLoggedIn === null) {
+  if (!mounted || status === "loading") {
     return (
       <Button size="lg" asChild>
         <Link href="/signup">Start free</Link>
@@ -29,8 +23,8 @@ export function CTAButton() {
 
   return (
     <Button size="lg" asChild>
-      <Link href={isLoggedIn ? "/content" : "/signup"}>
-        {isLoggedIn ? "Go to dashboard" : "Start free"}
+      <Link href={status === "authenticated" ? "/dashboard" : "/signup"}>
+        {status === "authenticated" ? "Go to dashboard" : "Start free"}
       </Link>
     </Button>
   );

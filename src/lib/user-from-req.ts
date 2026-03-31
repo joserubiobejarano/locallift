@@ -1,16 +1,26 @@
-import { getUserFromRequest } from "@/lib/auth-server";
-import { supabaseServer } from "@/lib/supabase/server";
+import { auth } from "@/auth";
 
-export async function resolveUser(req: Request) {
-  const tokenUser = await getUserFromRequest(req);
-  if (tokenUser) return tokenUser;
+export type ResolvedUser =
+  | { id: string; email?: string | null; demo?: false }
+  | { demo: true; id: string };
 
-  const supabase = await supabaseServer();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session?.user) return session.user;
+/**
+ * Resolve the current user for API routes: demo cookie short-circuit, then Auth.js session.
+ */
+export async function resolveUser(req: Request): Promise<ResolvedUser | null> {
+  const cookieHeader = req.headers.get("cookie") || "";
+  if (cookieHeader.includes("ll_demo=true")) {
+    return { demo: true, id: "demo-user" };
+  }
+
+  const session = await auth();
+  if (session?.user?.id) {
+    return {
+      id: session.user.id,
+      email: session.user.email,
+      demo: false,
+    };
+  }
 
   return null;
 }
-

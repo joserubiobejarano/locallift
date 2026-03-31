@@ -7,14 +7,21 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { demoAuditMarkdown } from "@/lib/demo-data";
-import { isDemoModeFromSearchParams } from "@/lib/demo";
+import {
+  isDemoModeFromSearchParams,
+  DEMO_LIMITS,
+  DEMO_STORAGE_KEYS,
+  incrementDemoUsage,
+  checkDemoLimit
+} from "@/lib/demo";
 import { useCurrentPlan } from "@/lib/use-current-plan";
 import { isPaidUser, isTrialing } from "@/lib/plan";
 import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { toast } from "sonner";
 
 type Location = {
   id: string;
@@ -26,6 +33,7 @@ function AuditPageContent() {
   const isDemo = isDemoModeFromSearchParams(searchParams);
   const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
   const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
+  const [showPlanGateModal, setShowPlanGateModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
@@ -39,50 +47,29 @@ function AuditPageContent() {
   const [useSampleData, setUseSampleData] = useState(false);
 
   const loadLocations = useCallback(async () => {
-    // Never load real locations in demo mode
     if (isDemo) {
       return;
     }
 
     try {
-      // First try to get locations from API to ensure they're synced
-      const res = await fetch("/api/google/locations");
-      if (res.status === 200) {
-        const data = await res.json();
-        if (data.locations && data.locations.length > 0) {
-          // Now query gbp_locations from database to get IDs
-          const supabase = supabaseBrowser();
-          const { data: gbpLocations, error: dbError } = await supabase
-            .from("gbp_locations")
-            .select("id, title, location_id")
-            .order("created_at", { ascending: false });
+      const res = await fetch("/api/google/locations/list", { credentials: "include" });
+      if (res.status !== 200) return;
 
-          if (!dbError && gbpLocations && gbpLocations.length > 0) {
-            // Match API locations with gbp_locations by location_id (which matches API location.name)
-            const mapped: Location[] = data.locations
-              .map((apiLoc: any) => {
-                const gbpLoc = gbpLocations.find(
-                  (g) => g.location_id === apiLoc.name
-                );
-                return gbpLoc
-                  ? {
-                      id: gbpLoc.id,
-                      title: apiLoc.title || gbpLoc.title || null,
-                    }
-                  : null;
-              })
-              .filter((loc: Location | null): loc is Location => loc !== null);
+      const data = await res.json();
+      const locs = data.locations as { id: string; title?: string; locationName?: string }[];
+      if (!locs?.length) return;
 
-            if (mapped.length > 0) {
-              setLocations(mapped);
-              setAuditMode("connected");
-              setSelectedLocationId(mapped[0].id);
-            }
-          }
-        }
+      const mapped: Location[] = locs.map((l) => ({
+        id: l.id,
+        title: l.title ?? null,
+      }));
+
+      if (mapped.length > 0) {
+        setLocations(mapped);
+        setAuditMode("connected");
+        setSelectedLocationId(mapped[0].id);
       }
     } catch (e) {
-      // Silently ignore errors
       console.error("[audit] failed to load locations", e);
     }
   }, [isDemo]);
@@ -101,14 +88,27 @@ function AuditPageContent() {
   }, [isDemo, useSampleData, result]);
 
   async function runAudit(mode: "connected" | "quick") {
-    // Never run real audits in demo mode
+    // Handle demo mode limits
     if (isDemo) {
+      if (checkDemoLimit(DEMO_STORAGE_KEYS.AUDITS_USED, DEMO_LIMITS.AUDITS)) {
+        setShowUpgradeModal(true);
+        return;
+      }
+
+      // Simulate loading for demo
+      setLoading(true);
+      setTimeout(() => {
+        setResult(demoAuditMarkdown);
+        setLoading(false);
+        incrementDemoUsage(DEMO_STORAGE_KEYS.AUDITS_USED);
+        toast.success("Sample report ready (legacy audit, demo).");
+      }, 1500);
       return;
     }
 
     // Check plan access for connected mode (quick mode is free via /free-audit)
     if (mode === "connected" && !hasPaidAccess) {
-      setShowUpgradeModal(true);
+      setShowPlanGateModal(true);
       return;
     }
 
@@ -144,7 +144,7 @@ function AuditPageContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to generate audit");
+        setError(data.error || "Failed to generate report");
         return;
       }
 
@@ -166,32 +166,55 @@ function AuditPageContent() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 text-sm text-amber-950 dark:text-amber-100">
+        <p className="font-medium text-foreground">Legacy tool — not part of the review product</p>
+        <p className="mt-1 text-muted-foreground">
+          For day-to-day work use{" "}
+          <Link href="/reviews" className="underline underline-offset-2">
+            Reviews
+          </Link>{" "}
+          (inbox &amp; replies) and{" "}
+          <Link href="/settings" className="underline underline-offset-2">
+            Settings
+          </Link>{" "}
+          (reply defaults &amp; Google Business Profile). This page may be removed later.
+        </p>
+      </div>
       <div>
-        <h1 className="text-2xl font-semibold mb-2">Profile Audit</h1>
+        <h1 className="text-2xl font-semibold mb-2">Legacy profile report</h1>
         <p className="text-muted-foreground">
-          Analyze your local presence and get instant optimization tips.
+          Older local-presence-style report. Your review workflow lives on Reviews.
         </p>
       </div>
 
       {(isDemo || useSampleData) && (
         <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3">
           <p className="text-sm text-orange-800 dark:text-orange-200">
-            Demo mode – You are viewing sample data. Connect your Google account in Settings to see your real reviews and audits.
+            Demo mode — sample report only. Connect Google in Settings to sync real reviews to{" "}
+            <Link href="/reviews" className="underline underline-offset-2">
+              Reviews
+            </Link>
+            .
           </p>
         </div>
       )}
 
-      {planInfo && hasPaidAccess && (
+      {planInfo && hasPaidAccess && !isDemo && (
         <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
       )}
 
       {!planLoading && !hasPaidAccess && !isDemo && (
         <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 space-y-2">
           <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-            Upgrade to LocalLift Starter to unlock full audits with Google Business Profile connection.
+            Upgrade to LocalLift Starter to connect Google Business Profile, sync reviews, and use the
+            review inbox — this legacy report is not the main product.
           </p>
           <p className="text-xs text-amber-800 dark:text-amber-200">
-            You can still run quick audits without a connection. For a free audit, visit <Link href="/free-audit" className="underline">/free-audit</Link>.
+            You can still try a quick check below without a connection. Public tool:{" "}
+            <Link href="/free-audit" className="underline">
+              /free-audit
+            </Link>
+            .
           </p>
         </div>
       )}
@@ -205,7 +228,7 @@ function AuditPageContent() {
                 <div>
                   <h3 className="text-sm font-medium mb-1">Just want to see how it looks?</h3>
                   <p className="text-xs text-muted-foreground">
-                    Run a sample audit to see what LocalLift can do for your business.
+                    Load a sample legacy report (reviews &amp; replies are on Reviews).
                   </p>
                 </div>
                 <Button
@@ -217,7 +240,7 @@ function AuditPageContent() {
                     setError(null);
                   }}
                 >
-                  Run sample audit
+                  Load sample report
                 </Button>
               </div>
             </CardContent>
@@ -232,7 +255,7 @@ function AuditPageContent() {
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground">
-                  No Google Business locations found. Connect your account in Settings or use Quick audit below.
+                  No Google Business locations found. Connect in Settings or use the quick check below.
                 </p>
               </CardContent>
             </Card>
@@ -256,12 +279,12 @@ function AuditPageContent() {
                 onClick={() => runAudit("connected")}
                 disabled={loading || !selectedLocationId || useSampleData || isDemo || (!hasPaidAccess && !isDemo)}
                 title={
-                  (useSampleData || isDemo) 
-                    ? "Exit demo mode to run a real audit" 
+                  (useSampleData || isDemo)
+                    ? "Exit demo mode to run a connected report"
                     : (!hasPaidAccess ? "Premium feature" : undefined)
                 }
               >
-                Run audit
+                Run connected report
               </Button>
             </div>
           )}
@@ -269,7 +292,7 @@ function AuditPageContent() {
 
         {/* Quick audit section */}
         <div className="space-y-3">
-          <h2 className="text-lg font-medium">Quick audit (no connection)</h2>
+          <h2 className="text-lg font-medium">Quick check (no connection)</h2>
           <div className="grid gap-3 max-w-2xl">
             <div>
               <label className="text-sm font-medium mb-1 block">
@@ -302,13 +325,18 @@ function AuditPageContent() {
             <div className="space-y-2">
               <Button
                 onClick={() => runAudit("quick")}
-                disabled={loading || !urlOrName.trim() || useSampleData || isDemo}
-                title={(useSampleData || isDemo) ? "Exit demo mode to run a real audit" : undefined}
+                // Allow quick audit in demo mode (it will just show sample data)
+                disabled={loading || (!urlOrName.trim() && !isDemo)}
+                title={(useSampleData || isDemo) ? "Run sample report" : undefined}
               >
-                Run quick audit
+                Run quick check
               </Button>
               <p className="text-xs text-muted-foreground">
-                Or try our <Link href="/free-audit" className="underline">free audit tool</Link> (no login required)
+                Or try the public{" "}
+                <Link href="/free-audit" className="underline">
+                  free check
+                </Link>{" "}
+                (no login required)
               </p>
             </div>
           </div>
@@ -316,7 +344,7 @@ function AuditPageContent() {
 
         {/* Results section */}
         {loading && (
-          <div className="text-muted-foreground">Analyzing your profile…</div>
+          <div className="text-muted-foreground">Generating report…</div>
         )}
 
         {error && (
@@ -337,10 +365,20 @@ function AuditPageContent() {
         )}
       </div>
 
-      <PlanGateModal 
-        open={showUpgradeModal} 
-        onOpenChange={setShowUpgradeModal}
-        featureName="Full profile audits with Google Business Profile connection"
+      <PlanGateModal
+        open={showPlanGateModal}
+        onOpenChange={setShowPlanGateModal}
+        featureName="Google Business Profile connection and review sync"
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        description={
+          isDemo
+            ? "You've reached the demo limit for this legacy screen. Start your free trial for the full review inbox."
+            : undefined
+        }
       />
     </div>
   );
@@ -351,10 +389,8 @@ export default function AuditPage() {
     <Suspense fallback={
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Profile Audit</h1>
-          <p className="text-muted-foreground">
-            Analyze your local presence and get instant optimization tips.
-          </p>
+          <h1 className="text-2xl font-semibold mb-2">Legacy profile report</h1>
+          <p className="text-muted-foreground">Loading…</p>
         </div>
         <div className="text-muted-foreground">Loading...</div>
       </div>

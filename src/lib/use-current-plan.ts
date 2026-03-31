@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import type { PlanId, PlanStatus } from "@/lib/plan";
 
 export type PlanInfo = {
@@ -13,7 +12,12 @@ export type PlanInfo = {
   usageResetDate: string | null;
 };
 
-export function useCurrentPlan(): { planId: PlanId; planStatus: PlanStatus; isLoading: boolean; planInfo: PlanInfo | null } {
+export function useCurrentPlan(): {
+  planId: PlanId;
+  planStatus: PlanStatus;
+  isLoading: boolean;
+  planInfo: PlanInfo | null;
+} {
   const [planId, setPlanId] = useState<PlanId>("free");
   const [planStatus, setPlanStatus] = useState<PlanStatus>("free");
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
@@ -22,46 +26,37 @@ export function useCurrentPlan(): { planId: PlanId; planStatus: PlanStatus; isLo
   useEffect(() => {
     async function loadPlan() {
       try {
-        const supabase = supabaseBrowser();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session?.user?.id) {
+        const res = await fetch("/api/user/plan", { credentials: "include" });
+        if (!res.ok) {
           setPlanId("free");
           setPlanStatus("free");
           setIsLoading(false);
           return;
         }
 
-        // Get plan info from view
-        const { data: plan } = await supabase
-          .from("v_user_plan")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
+        const plan = (await res.json()) as {
+          planId: PlanId;
+          planStatus: PlanStatus;
+          currentPeriodEnd: string | null;
+          aiPostsUsed: number;
+          auditsUsed: number;
+          usageResetDate: string | null;
+        };
 
-        // Determine effective plan status
         const effectiveStatus: PlanStatus =
-          (plan?.subscription_status as PlanStatus) ||
-          (plan?.plan_status as PlanStatus) ||
-          "free";
+          plan.planStatus || "free";
 
-        // Determine effective plan ID
-        const effectivePlanId: PlanId =
-          effectiveStatus === "active" || effectiveStatus === "trialing" || effectiveStatus === "past_due"
-            ? ((plan?.plan_type as PlanId) || "free")
-            : ((plan?.manual_plan as PlanId) || "free");
+        const effectivePlanId: PlanId = plan.planId || "free";
 
         setPlanId(effectivePlanId);
         setPlanStatus(effectiveStatus);
         setPlanInfo({
           planId: effectivePlanId,
           planStatus: effectiveStatus,
-          currentPeriodEnd: plan?.plan_current_period_end || plan?.subscription_current_period_end || null,
-          aiPostsUsed: plan?.ai_posts_used || 0,
-          auditsUsed: plan?.audits_used || 0,
-          usageResetDate: plan?.usage_reset_date || null,
+          currentPeriodEnd: plan.currentPeriodEnd,
+          aiPostsUsed: plan.aiPostsUsed,
+          auditsUsed: plan.auditsUsed,
+          usageResetDate: plan.usageResetDate,
         });
       } catch (error) {
         console.error("[useCurrentPlan] error:", error);
@@ -77,4 +72,3 @@ export function useCurrentPlan(): { planId: PlanId; planStatus: PlanStatus; isLo
 
   return { planId, planStatus, isLoading, planInfo };
 }
-
