@@ -5,7 +5,6 @@ import {
   DashboardCallout,
   DashboardEmptyState,
   DashboardPage,
-  DashboardPageHeader,
   DashboardSection,
 } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
@@ -16,14 +15,9 @@ import { getUserPlanInfo } from "@/lib/plan-server";
 import { isPaidUser, isTrialing } from "@/lib/plan";
 import { auth } from "@/auth";
 
-export default async function DashboardPageRoute({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const resolvedSearchParams = await searchParams;
+export default async function DashboardPageRoute() {
   const cookieStore = await cookies();
-  const isDemo = resolvedSearchParams.demo === "1" || cookieStore.get("ll_demo")?.value === "true";
+  const isDemo = cookieStore.get("ll_demo")?.value === "true";
 
   const metrics = await getDashboardMetrics(isDemo);
   let planInfo = null;
@@ -49,20 +43,6 @@ export default async function DashboardPageRoute({
 
   return (
     <DashboardPage width="lg">
-      <DashboardPageHeader
-        title="Overview"
-        description={
-          <>
-            Track loaded reviews, replies still needed, drafts, and what you&apos;ve posted — same
-            workflow as on{" "}
-            <Link href="/reviews" className="text-foreground font-medium underline-offset-4 hover:underline">
-              Reviews
-            </Link>
-            .
-          </>
-        }
-      />
-
       {planInfo && hasPaidAccess && !isDemo && (
         <UpgradeBanner planStatus={planInfo.planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
       )}
@@ -72,6 +52,72 @@ export default async function DashboardPageRoute({
           <p>{metrics?.criticalError ?? "We could not load stats. Please refresh."}</p>
         </DashboardCallout>
       )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-foreground">Reviews loaded</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.totalReviewsSynced ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-foreground">
+              {isDemo
+                ? "Sample data — mirrors “Loaded” on Reviews."
+                : "Reviews synced into your review inbox from Google Business Profile (all locations)."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-foreground">Unanswered</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.unansweredReviews ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-foreground">
+              {isDemo
+                ? "Sample data — mirrors “Unanswered” on Reviews (no reply on Google yet)."
+                : "Not yet marked replied on Google after sync. On Reviews, some of these may already have a draft in the editor."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-foreground">Drafts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.draftsCount ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-foreground">
+              {isDemo
+                ? "Sample count — mirrors drafts in progress on the Reviews page."
+                : "Unposted drafts saved in LocalLift (database). Text you only have in the Reviews editor is not counted here."}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-foreground">Posted / replied</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
+              {metrics?.repliesPostedThisMonth ?? 0}
+            </div>
+            <p className="text-xs leading-relaxed text-foreground">
+              {isDemo
+                ? "Sample data — replied reviews this period in demo."
+                : "Reviews marked replied on Google, updated this calendar month."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {isEmpty && (
         <DashboardEmptyState
@@ -83,7 +129,7 @@ export default async function DashboardPageRoute({
                 Reviews
               </Link>{" "}
               and sync from Google Business Profile to load your inbox. Or try the workflow first with{" "}
-              <Link href="/reviews?demo=1" className="text-foreground underline-offset-4 hover:underline">
+              <Link href="/demo" className="text-foreground underline-offset-4 hover:underline">
                 sample reviews
               </Link>{" "}
               (no GBP required).
@@ -92,78 +138,12 @@ export default async function DashboardPageRoute({
         />
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader className="space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Reviews loaded</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold tabular-nums tracking-tight">
-              {metrics?.totalReviewsSynced ?? 0}
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {isDemo
-                ? "Sample data — mirrors “Loaded” on Reviews."
-                : "Reviews synced into your review inbox from Google Business Profile (all locations)."}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Unanswered</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold tabular-nums tracking-tight">
-              {metrics?.unansweredReviews ?? 0}
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {isDemo
-                ? "Sample data — mirrors “Unanswered” on Reviews (no reply on Google yet)."
-                : "Not yet marked replied on Google after sync. On Reviews, some of these may already have a draft in the editor."}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Drafts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold tabular-nums tracking-tight">
-              {metrics?.draftsCount ?? 0}
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {isDemo
-                ? "Sample count — mirrors drafts in progress on the Reviews page."
-                : "Unposted drafts saved in LocalLift (database). Text you only have in the Reviews editor is not counted here."}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Posted / replied</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold tabular-nums tracking-tight">
-              {metrics?.repliesPostedThisMonth ?? 0}
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {isDemo
-                ? "Sample data — replied reviews this period in demo."
-                : "Reviews marked replied on Google, updated this calendar month."}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {isDemo && (
         <DashboardCallout variant="info">
           <p>
             You&apos;re viewing sample review data. Open{" "}
-            <Link href="/reviews?demo=1" className="text-foreground underline-offset-4 hover:underline">
-              Reviews
+            <Link href="/demo" className="text-foreground underline-offset-4 hover:underline">
+              the live demo
             </Link>{" "}
             to walk through generate, draft, and reply — then connect GBP when you&apos;re ready.
           </p>
@@ -175,10 +155,10 @@ export default async function DashboardPageRoute({
           <Button asChild>
             <Link href="/reviews">Go to Reviews</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/reviews?demo=1">Test sample reviews</Link>
+          <Button asChild>
+            <Link href="/demo">Test sample reviews</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild>
             <Link href="/settings">Account &amp; reply settings</Link>
           </Button>
         </div>

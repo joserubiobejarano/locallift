@@ -6,10 +6,15 @@ const GOOGLE_AUTH_BASE = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GBP_API_BASE = "https://businessprofile.googleapis.com/v1";
 
+/** Must match the URI registered in Google Cloud Console (Authorized redirect URIs). */
+export function getGoogleGbpOAuthRedirectUri(): string {
+  return `${getServerAppUrl()}/api/google/oauth/callback`;
+}
+
 export function googleAuthUrl(state: string) {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${getServerAppUrl()}/api/google/oauth/callback`,
+    redirect_uri: getGoogleGbpOAuthRedirectUri(),
     response_type: "code",
     access_type: "offline",
     include_granted_scopes: "true",
@@ -25,7 +30,7 @@ export async function exchangeCodeForTokens(code: string) {
     code,
     client_id: process.env.GOOGLE_CLIENT_ID!,
     client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-    redirect_uri: `${getServerAppUrl()}/api/google/oauth/callback`,
+    redirect_uri: getGoogleGbpOAuthRedirectUri(),
     grant_type: "authorization_code",
   });
 

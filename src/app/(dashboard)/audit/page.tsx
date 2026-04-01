@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { demoAuditMarkdown } from "@/lib/demo-data";
 import {
-  isDemoModeFromSearchParams,
+  isDemoMode,
   DEMO_LIMITS,
   DEMO_STORAGE_KEYS,
   incrementDemoUsage,
@@ -29,8 +28,7 @@ type Location = {
 };
 
 function AuditPageContent() {
-  const searchParams = useSearchParams();
-  const isDemo = isDemoModeFromSearchParams(searchParams);
+  const isDemo = isDemoMode();
   const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
   const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
   const [showPlanGateModal, setShowPlanGateModal] = useState(false);
@@ -168,7 +166,7 @@ function AuditPageContent() {
     <div className="space-y-6">
       <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 text-sm text-amber-950 dark:text-amber-100">
         <p className="font-medium text-foreground">Legacy tool — not part of the review product</p>
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-1 text-foreground">
           For day-to-day work use{" "}
           <Link href="/reviews" className="underline underline-offset-2">
             Reviews
@@ -182,7 +180,7 @@ function AuditPageContent() {
       </div>
       <div>
         <h1 className="text-2xl font-semibold mb-2">Legacy profile report</h1>
-        <p className="text-muted-foreground">
+        <p className="text-foreground">
           Older local-presence-style report. Your review workflow lives on Reviews.
         </p>
       </div>
@@ -227,12 +225,11 @@ function AuditPageContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium mb-1">Just want to see how it looks?</h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-foreground">
                     Load a sample legacy report (reviews &amp; replies are on Reviews).
                   </p>
                 </div>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => {
                     setUseSampleData(true);
@@ -254,7 +251,7 @@ function AuditPageContent() {
           {locations.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground">
                   No Google Business locations found. Connect in Settings or use the quick check below.
                 </p>
               </CardContent>
@@ -331,7 +328,7 @@ function AuditPageContent() {
               >
                 Run quick check
               </Button>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground">
                 Or try the public{" "}
                 <Link href="/free-audit" className="underline">
                   free check
@@ -344,7 +341,7 @@ function AuditPageContent() {
 
         {/* Results section */}
         {loading && (
-          <div className="text-muted-foreground">Generating report…</div>
+          <div className="text-foreground">Generating report…</div>
         )}
 
         {error && (
@@ -358,7 +355,7 @@ function AuditPageContent() {
                 {result}
               </ReactMarkdown>
             </div>
-            <Button variant="secondary" onClick={onCopy}>
+            <Button onClick={onCopy}>
               Copy
             </Button>
           </div>
@@ -390,9 +387,9 @@ export default function AuditPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Legacy profile report</h1>
-          <p className="text-muted-foreground">Loading…</p>
+          <p className="text-foreground">Loading…</p>
         </div>
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-foreground">Loading...</div>
       </div>
     }>
       <AuditPageContent />

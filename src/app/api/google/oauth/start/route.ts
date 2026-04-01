@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 
-import { googleAuthUrl } from "@/lib/google";
+import { getGoogleGbpOAuthRedirectUri, googleAuthUrl } from "@/lib/google";
 import { resolveUser } from "@/lib/user-from-req";
 import { getServerAppUrl } from "@/lib/env";
 import { buildGoogleOAuthState } from "@/lib/google-oauth-state";
@@ -19,7 +19,11 @@ export async function GET(req: Request) {
 
   const u = new URL(req.url);
   if (u.searchParams.get("debug") === "1") {
-    return NextResponse.json({ redirect: url });
+    return NextResponse.json({
+      appBaseUrl: getServerAppUrl(),
+      redirectUri: getGoogleGbpOAuthRedirectUri(),
+      redirect: url,
+    });
   }
 
   const res = NextResponse.redirect(url, { status: 302 });

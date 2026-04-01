@@ -13,6 +13,8 @@
 - **Type**: Server-only
 - **Description**: Direct / unpooled URL for migrations or long-running clients.
 
+**Schema upgrades:** Apply new SQL files under `neon/migrations/` in order (e.g. `002_auto_reply_profiles.sql` adds `profiles.auto_reply_all_reviews` for the Settings auto-reply toggle). If this column is missing, `/api/settings/reply` and review automation will error until the migration is run.
+
 ## Auth.js (NextAuth v5)
 
 ### `AUTH_SECRET`
@@ -48,6 +50,20 @@
 
 **GBP redirect URI**: `{NEXT_PUBLIC_APP_URL}/api/google/oauth/callback`
 
+### Google Cloud Console checklist (same OAuth client as login)
+
+Use **one** Web application OAuth client for both NextAuth and GBP. Under **Authorized redirect URIs**, register **both** URLs exactly (scheme, host, port, path — no query string):
+
+| Flow | Redirect URI (local example) |
+|------|------------------------------|
+| Sign-in (NextAuth) | `http://localhost:3000/api/auth/callback/google` |
+| Connect GBP | `http://localhost:3000/api/google/oauth/callback` |
+
+- Set `NEXT_PUBLIC_APP_URL` **without** a trailing slash (e.g. `http://localhost:3000`). The app normalizes trailing slashes server-side, but the value should still match what you register in Google Cloud.
+- If Google shows a generic error and you never return to the app, compare the `redirect_uri` sent in the authorize request to your Console list — a mismatch is the most common cause.
+
+**Inspect the runtime GBP redirect URI (logged-in session):** open `GET /api/google/oauth/start?debug=1` while signed in. The JSON includes `appBaseUrl`, `redirectUri`, and `redirect` (full Google URL). Ensure `redirectUri` is listed in **Authorized redirect URIs**.
+
 ## OpenAI
 
 ### `OPENAI_API_KEY`
@@ -78,7 +94,8 @@
 ### `NEXT_PUBLIC_APP_URL`
 
 - **Type**: Client (NEXT_PUBLIC_)
-- **Local**: `http://localhost:3000`
+- **Local**: `http://localhost:3000` (no trailing slash)
+- **Server behavior**: Trailing slashes are stripped when building OAuth and server redirects so paths like `/api/google/oauth/callback` are never doubled.
 
 ## Removed (Supabase)
 

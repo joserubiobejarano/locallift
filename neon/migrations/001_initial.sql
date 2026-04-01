@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   reply_tone TEXT,
   owner_name TEXT,
   contact_preference TEXT,
+  auto_reply_all_reviews BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );

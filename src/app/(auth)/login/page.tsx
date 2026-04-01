@@ -14,11 +14,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const isDemo = searchParams?.get("demo") === "1";
   const callbackParam = searchParams?.get("callbackUrl") ?? undefined;
-  const afterLoginUrl = isDemo
-    ? "/dashboard?demo=1"
-    : safeRelativeRedirect(callbackParam, "/dashboard");
+  const afterLoginUrl = safeRelativeRedirect(callbackParam, "/dashboard");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -15,11 +15,25 @@ export async function GET(req: NextRequest) {
   if (!loc) return NextResponse.json({ items: [] });
 
   const rows = await sql`
-    SELECT google_review_id, reviewer_name, star_rating, comment, status
-    FROM public.reviews
-    WHERE user_id = ${user.id}
-      AND location_name = ${loc}
-    ORDER BY review_update_time DESC NULLS LAST
+    SELECT
+      r.google_review_id,
+      r.reviewer_name,
+      r.star_rating,
+      r.comment,
+      r.status,
+      COALESCE(draft.draft_markdown, r.reply_comment) AS draft_reply
+    FROM public.reviews r
+    LEFT JOIN LATERAL (
+      SELECT rr.draft_markdown
+      FROM public.review_replies rr
+      WHERE rr.review_id = r.id
+        AND rr.posted = false
+      ORDER BY rr.updated_at DESC NULLS LAST, rr.created_at DESC
+      LIMIT 1
+    ) draft ON true
+    WHERE r.user_id = ${user.id}
+      AND r.location_name = ${loc}
+    ORDER BY r.review_update_time DESC NULLS LAST
     LIMIT 100
   `;
 

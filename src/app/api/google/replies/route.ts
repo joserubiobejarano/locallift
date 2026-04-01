@@ -4,9 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { resolveUser } from "@/lib/user-from-req";
 
-import { googleFetch } from "@/lib/google";
-
-import { sql } from "@/lib/db/neon";
+import { postReplyToGoogleAndPersist } from "@/lib/review-reply-server";
 import { canUseReviewAutomation } from "@/lib/plan";
 import { getUserPlan } from "@/lib/plan-server";
 
@@ -37,50 +35,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const url = `https://mybusiness.googleapis.com/v4/${encodeURIComponent(locationName)}/reviews/${encodeURIComponent(reviewId)}:updateReply`;
+    const result = await postReplyToGoogleAndPersist(user.id, reviewId, locationName, reply);
 
-    const r = await googleFetch(user.id, url, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reply: { comment: reply } }),
-    });
-
-    if (!r.ok) {
-      const t = await r.text();
-      return NextResponse.json({ error: t }, { status: r.status });
-    }
-
-    const reviewRows = await sql`
-      SELECT id FROM public.reviews
-      WHERE user_id = ${user.id}
-        AND google_review_id = ${reviewId}
-      LIMIT 1
-    `;
-
-    const review = reviewRows[0] as { id: string } | undefined;
-
-    if (review) {
-      await sql`
-        INSERT INTO public.review_replies (
-          user_id, review_id, draft_markdown, posted, posted_at
-        ) VALUES (
-          ${user.id},
-          ${review.id},
-          ${reply},
-          true,
-          ${new Date().toISOString()}
-        )
-      `;
-
-      await sql`
-        UPDATE public.reviews
-        SET
-          status = 'replied',
-          reply_comment = ${reply},
-          reply_update_time = ${new Date().toISOString()},
-          updated_at = now()
-        WHERE id = ${review.id}
-      `;
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status ?? 502 });
     }
 
     return NextResponse.json({ ok: true });

@@ -1,24 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, Suspense, useSyncExternalStore } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { ReactNode, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 
 import { DashboardCallout, DashboardTopNav } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function readDemoCookie(): boolean {
   return typeof document !== "undefined" && document.cookie.includes("ll_demo=true");
 }
 
 function DemoBanner() {
-  const searchParams = useSearchParams();
   const demoFromCookie = useSyncExternalStore(
     () => () => {},
     readDemoCookie,
     () => false
   );
-  const isDemo = searchParams.get("demo") === "1" || demoFromCookie;
+  const isDemo = demoFromCookie;
 
   if (!isDemo) return null;
 
@@ -48,17 +48,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-dvh flex flex-col">
       {!isConnectGate && (
         <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <div className="mx-auto flex max-w-5xl items-center px-4 py-3 lg:px-8">
-            <DashboardTopNav />
+          <div className="mx-auto flex max-w-5xl items-center justify-center px-4 py-3 lg:px-8">
+            <DashboardTopNav className="w-full justify-center" />
           </div>
         </header>
       )}
-      <main className="flex flex-1 flex-col p-6 lg:p-8">
-        <div className="mx-auto w-full max-w-5xl flex-1">
-          <Suspense fallback={null}>
-            <DemoBanner />
-          </Suspense>
-          <div className="flex-1">{children}</div>
+      <main className="flex min-h-0 flex-1 flex-col p-6 lg:p-8">
+        <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col">
+          <DemoBanner />
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 flex-col",
+              isConnectGate && "justify-center"
+            )}
+          >
+            {children}
+          </div>
         </div>
       </main>
     </div>

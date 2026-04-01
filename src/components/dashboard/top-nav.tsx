@@ -16,7 +16,7 @@ export function DashboardTopNav({ className }: { className?: string }) {
 
   return (
     <nav
-      className={cn("flex flex-wrap items-center gap-1", className)}
+      className={cn("flex flex-wrap items-center justify-center gap-1", className)}
       aria-label="Dashboard"
     >
       {items.map(({ href, label }) => {
@@ -27,10 +27,10 @@ export function DashboardTopNav({ className }: { className?: string }) {
             key={href}
             href={href}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors",
               active
-                ? "bg-muted text-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                ? "bg-muted shadow-sm"
+                : "hover:bg-muted/60"
             )}
           >
             {label}

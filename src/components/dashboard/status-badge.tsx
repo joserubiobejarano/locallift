@@ -10,7 +10,7 @@ const toneClass: Record<StatusTone, string> = {
     "border-emerald-600/35 bg-emerald-500/10 font-medium text-emerald-900 dark:text-emerald-100",
   warning:
     "border-amber-600/35 bg-amber-500/10 font-medium text-amber-950 dark:text-amber-100",
-  neutral: "font-normal text-muted-foreground",
+  neutral: "font-normal text-foreground",
 };
 
 export function StatusBadge({

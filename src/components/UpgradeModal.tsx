@@ -49,7 +49,7 @@ export function UpgradeModal({ open, onClose, description }: UpgradeModalProps) 
                                 Start your free trial
                             </Button>
                         </Link>
-                        <Button variant="outline" onClick={onClose}>
+                        <Button onClick={onClose}>
                             Continue exploring
                         </Button>
                     </div>

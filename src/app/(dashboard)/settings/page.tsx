@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 const DEFAULT_TONE = "Friendly and professional";
 
@@ -48,6 +50,8 @@ function SettingsPageContent() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [autoReplyAllReviews, setAutoReplyAllReviews] = useState(false);
+  const [autoReplySaving, setAutoReplySaving] = useState(false);
 
   function readApiErrorMessage(raw: unknown, fallback: string): string {
     if (raw && typeof raw === "object" && "error" in raw && typeof raw.error === "string") {
@@ -96,6 +100,7 @@ function SettingsPageContent() {
           );
           setOwnerName(typeof s.ownerName === "string" ? s.ownerName : "");
           setContactPreference(typeof s.contactPreference === "string" ? s.contactPreference : "");
+          setAutoReplyAllReviews(Boolean(s.autoReplyAllReviews));
         } else {
           setSettingsError("Could not load reply settings.");
         }
@@ -165,6 +170,7 @@ function SettingsPageContent() {
           tone,
           ownerName,
           contactPreference,
+          autoReplyAllReviews,
         }),
       });
       if (!res.ok) {
@@ -215,6 +221,37 @@ function SettingsPageContent() {
     window.location.href = "/api/google/oauth/start";
   };
 
+  const persistAutoReply = async (next: boolean) => {
+    setAutoReplySaving(true);
+    try {
+      const res = await fetch("/api/settings/reply", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName,
+          tone,
+          ownerName,
+          contactPreference,
+          autoReplyAllReviews: next,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(typeof j.error === "string" ? j.error : "Save failed");
+      }
+      setAutoReplyAllReviews(next);
+      toast.success(
+        next
+          ? "Auto-reply on — new replies will post to Google after sync or when you generate."
+          : "Auto-reply off — replies are saved as drafts."
+      );
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not update auto-reply");
+    } finally {
+      setAutoReplySaving(false);
+    }
+  };
+
   if (isDemo) {
     return (
       <DashboardPage width="sm">
@@ -232,7 +269,7 @@ function SettingsPageContent() {
             </Button>
           }
         >
-          <p className="text-muted-foreground">
+          <p className="text-foreground">
             Settings are not available in demo mode. Create your free account to save reply preferences
             and connect Google Business Profile.
           </p>
@@ -277,7 +314,7 @@ function SettingsPageContent() {
             </DashboardCallout>
           )}
           {settingsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading reply settings…</p>
+            <p className="text-sm text-foreground">Loading reply settings…</p>
           ) : (
             <>
               <FormField label="Business name" htmlFor="settings-business-name">
@@ -329,7 +366,7 @@ function SettingsPageContent() {
                   {saveState === "saving" ? "Saving…" : "Save reply settings"}
                 </Button>
                 {saveState === "saved" && (
-                  <Badge variant="secondary" className="font-normal text-muted-foreground">
+                  <Badge variant="secondary" className="font-normal text-foreground">
                     Saved
                   </Badge>
                 )}
@@ -365,19 +402,19 @@ function SettingsPageContent() {
           )}
 
           {connLoading && (
-            <p className="text-sm text-muted-foreground">Loading Google connection…</p>
+            <p className="text-sm text-foreground">Loading Google connection…</p>
           )}
 
           {!connLoading && !gbpConnected && (
             <div className="space-y-4">
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="text-sm leading-relaxed text-foreground">
                 Sync your locations and reviews so LocalLift can help you reply on Google Business
                 Profile.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button onClick={handleConnectGoogle}>Connect with Google</Button>
                 {error && (
-                  <Button type="button" variant="outline" onClick={() => void fetchConnectionData()}>
+                  <Button type="button" onClick={() => void fetchConnectionData()}>
                     Retry
                   </Button>
                 )}
@@ -388,10 +425,10 @@ function SettingsPageContent() {
           {!connLoading && gbpConnected && (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-3">
-                <Button onClick={handleSyncLocations} variant="secondary" disabled={isSyncing}>
+                <Button onClick={handleSyncLocations} disabled={isSyncing}>
                   {isSyncing ? "Syncing…" : "Sync locations"}
                 </Button>
-                <Button onClick={handleDisconnect} variant="outline">
+                <Button onClick={handleDisconnect}>
                   Disconnect Google
                 </Button>
               </div>
@@ -410,7 +447,7 @@ function SettingsPageContent() {
                               {loc.title || loc.locationName}
                             </div>
                             {loc.primaryCategory && (
-                              <div className="mt-1 text-xs text-muted-foreground">
+                              <div className="mt-1 text-xs text-foreground">
                                 {loc.primaryCategory}
                               </div>
                             )}
@@ -427,7 +464,7 @@ function SettingsPageContent() {
                   </ul>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground">
                   No locations synced yet. Click &quot;Sync locations&quot; to pull them from Google.
                 </p>
               )}
@@ -436,8 +473,37 @@ function SettingsPageContent() {
         </CardContent>
       </Card>
 
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Auto-reply to all reviews</CardTitle>
+          <CardDescription>
+            When enabled, we generate replies after each review sync and when you click Generate, then post
+            them to Google Business Profile automatically. When disabled, replies are saved as drafts for you
+            to review and post manually.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-row items-center justify-between gap-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-sm font-medium text-foreground">Automatic posting</p>
+              <p className="text-xs text-foreground">
+                {autoReplyAllReviews
+                  ? "ON — replies publish to GBP when generated or after sync."
+                  : "OFF — replies are stored as drafts only."}
+              </p>
+            </div>
+            <Switch
+              checked={autoReplyAllReviews}
+              onCheckedChange={(v) => void persistAutoReply(v)}
+              disabled={autoReplySaving || settingsLoading}
+              aria-label="Auto-reply to all reviews"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="border-t border-border pt-6">
-        <p className="mb-3 text-sm text-muted-foreground">Signed in as your account.</p>
+        <p className="mb-3 text-sm text-foreground">Signed in as your account.</p>
         <SignOutButton className="w-full sm:w-auto" />
       </div>
     </DashboardPage>

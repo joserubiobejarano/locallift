@@ -12,7 +12,7 @@ export default function SignOutButton({ className }: { className?: string }) {
   }
 
   return (
-    <Button variant="secondary" className={cn(className)} onClick={signOutHandler}>
+    <Button className={cn(className)} onClick={signOutHandler}>
       Sign out
     </Button>
   );

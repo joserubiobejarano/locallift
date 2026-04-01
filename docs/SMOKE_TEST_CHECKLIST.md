@@ -22,7 +22,7 @@ After deploying to Vercel, run through these tests to verify everything works.
 - [ ] Sign up form is visible
 - [ ] Create a test account with email/password
 - [ ] Sign up completes successfully
-- [ ] Redirects to `/content` after sign up
+- [ ] Redirects to `/dashboard` after sign up (or your configured default)
 - [ ] No console errors
 
 ## 3. Authentication - Login
@@ -31,7 +31,7 @@ After deploying to Vercel, run through these tests to verify everything works.
 - [ ] Login form is visible
 - [ ] Log in with test account credentials
 - [ ] Login completes successfully
-- [ ] Redirects to `/content` after login
+- [ ] Redirects to `/dashboard` after login (or `callbackUrl` when provided)
 - [ ] No console errors
 
 ## 4. Authentication - Google OAuth (Optional)
@@ -40,8 +40,8 @@ After deploying to Vercel, run through these tests to verify everything works.
 - [ ] Click "Continue with Google" button
 - [ ] Redirects to Google OAuth consent screen
 - [ ] Complete Google OAuth flow
-- [ ] Redirects back to `/auth/callback`
-- [ ] Then redirects to `/content`
+- [ ] Completes OAuth and returns to the app (NextAuth callback at `/api/auth/callback/google`)
+- [ ] Then lands on the post-login destination (e.g. `/dashboard` or the `callbackUrl` you used)
 - [ ] User is logged in
 - [ ] No console errors
 

@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -41,14 +40,6 @@ type Project = {
 };
 
 export default function ContentPage() {
-  return (
-    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading…</div>}>
-      <ContentPageInner />
-    </Suspense>
-  );
-}
-
-function ContentPageInner() {
   const { planStatus, isLoading: planLoading, planInfo } = useCurrentPlan();
   const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
   const [showPlanGateModal, setShowPlanGateModal] = useState(false);
@@ -63,8 +54,7 @@ function ContentPageInner() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const searchParams = useSearchParams();
-  const isDemo = isDemoMode(searchParams);
+  const isDemo = isDemoMode();
 
   const generatorOptions: Array<{ value: GeneratorType; label: string }> =
     useMemo(
@@ -299,7 +289,8 @@ function ContentPageInner() {
           {generatorOptions.map((option) => (
             <Button
               key={option.value}
-              variant={type === option.value ? "default" : "secondary"}
+              variant="default"
+              className={type !== option.value ? "opacity-70" : undefined}
               onClick={() => setType(option.value)}
             >
               {option.label}
@@ -342,18 +333,16 @@ function ContentPageInner() {
               {loading ? "Generating..." : "Generate"}
             </Button>
             <Button
-              variant="secondary"
               onClick={onSave}
               disabled={!markdown || saving}
               title={isDemo ? "Saving disabled in demo mode" : undefined}
             >
               {saving ? "Saving..." : "Save as Project"}
             </Button>
-            <Button variant="secondary" onClick={onCopy} disabled={!markdown}>
+            <Button onClick={onCopy} disabled={!markdown}>
               Copy
             </Button>
             <Button
-              variant="secondary"
               onClick={onDownload}
               disabled={!markdown}
             >
@@ -368,7 +357,7 @@ function ContentPageInner() {
               {markdown}
             </ReactMarkdown>
           ) : (
-            <p className="text-muted-foreground">
+            <p className="text-foreground">
               Your generated Markdown will appear here…
             </p>
           )}

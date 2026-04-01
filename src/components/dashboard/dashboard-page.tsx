@@ -37,25 +37,45 @@ export function DashboardPageHeader({
   children,
   className,
   kicker,
+  align = "start",
   ...props
 }: React.ComponentProps<"header"> & {
   title: string;
   description?: React.ReactNode;
   kicker?: string;
+  align?: "start" | "center";
 }) {
+  const centered = align === "center";
+
   return (
-    <header className={cn("space-y-2", className)} {...props}>
+    <header className={cn("space-y-2", centered && "text-center", className)} {...props}>
       {kicker ? (
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{kicker}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-foreground">{kicker}</p>
       ) : null}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
+      <div
+        className={cn(
+          "flex flex-col gap-4",
+          centered
+            ? "items-center"
+            : "sm:flex-row sm:items-start sm:justify-between"
+        )}
+      >
+        <div className={cn("space-y-1", !centered && "min-w-0")}>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {description ? (
-            <div className="text-sm leading-relaxed text-muted-foreground">{description}</div>
+            <div className="text-sm leading-relaxed text-foreground">{description}</div>
           ) : null}
         </div>
-        {children ? <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div> : null}
+        {children ? (
+          <div
+            className={cn(
+              "flex shrink-0 flex-wrap items-center gap-2",
+              centered && "justify-center"
+            )}
+          >
+            {children}
+          </div>
+        ) : null}
       </div>
     </header>
   );
@@ -75,7 +95,7 @@ export function DashboardSection({
     <section className={cn("space-y-4", className)} {...props}>
       <div className="space-y-1">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        {description ? <p className="text-sm text-foreground">{description}</p> : null}
       </div>
       {children}
     </section>

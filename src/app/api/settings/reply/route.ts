@@ -13,6 +13,7 @@ const PutSchema = z.object({
   tone: z.string().optional(),
   ownerName: z.string().optional(),
   contactPreference: z.string().optional(),
+  autoReplyAllReviews: z.boolean().optional(),
 });
 
 function isDemoUser(user: unknown): boolean {
@@ -42,6 +43,7 @@ export async function GET(req: Request) {
       tone: "",
       ownerName: "",
       contactPreference: "",
+      autoReplyAllReviews: false,
     });
   }
 
@@ -50,6 +52,7 @@ export async function GET(req: Request) {
     tone: row.reply_tone?.trim() ?? "",
     ownerName: row.owner_name?.trim() ?? "",
     contactPreference: row.contact_preference?.trim() ?? "",
+    autoReplyAllReviews: row.auto_reply_all_reviews === true,
   });
 }
 
@@ -78,7 +81,13 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const { businessName, tone, ownerName, contactPreference } = parsed.data;
+  const { businessName, tone, ownerName, contactPreference, autoReplyAllReviews } = parsed.data;
+
+  const existing = await getProfileReplyDefaults(user.id);
+  const nextAutoReply =
+    autoReplyAllReviews !== undefined
+      ? autoReplyAllReviews
+      : (existing?.auto_reply_all_reviews ?? false);
 
   await sql`
     UPDATE public.profiles
@@ -87,6 +96,7 @@ export async function PUT(req: Request) {
       reply_tone = ${emptyToNull(tone)},
       owner_name = ${emptyToNull(ownerName)},
       contact_preference = ${emptyToNull(contactPreference)},
+      auto_reply_all_reviews = ${nextAutoReply},
       updated_at = now()
     WHERE id = ${user.id}
   `;

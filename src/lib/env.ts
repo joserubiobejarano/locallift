@@ -1,4 +1,18 @@
 /**
+ * Normalize app base URL: trim whitespace and remove trailing slashes.
+ * Prevents double slashes when joining paths (e.g. OAuth `redirect_uri`).
+ */
+export function normalizeAppBaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "");
+}
+
+function resolveServerAppBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (raw) return normalizeAppBaseUrl(raw);
+  return "http://localhost:3000";
+}
+
+/**
  * Get the application base URL.
  * Falls back to localhost:3000 for local development if NEXT_PUBLIC_APP_URL is not set.
  */
@@ -7,9 +21,8 @@ export function getAppUrl(): string {
     // Client-side: use the current origin
     return window.location.origin;
   }
-  
-  // Server-side: use env var or fallback to localhost
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  return resolveServerAppBaseUrl();
 }
 
 /**
@@ -17,6 +30,6 @@ export function getAppUrl(): string {
  * Use this when you need the URL in API routes or server components.
  */
 export function getServerAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return resolveServerAppBaseUrl();
 }
 

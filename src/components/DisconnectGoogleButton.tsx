@@ -10,7 +10,7 @@ export default function DisconnectGoogleButton() {
   }
 
   return (
-    <Button type="button" variant="secondary" onClick={handleDisconnect}>
+    <Button type="button" onClick={handleDisconnect}>
       Disconnect
     </Button>
   );

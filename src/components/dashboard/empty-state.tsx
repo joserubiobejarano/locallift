@@ -23,7 +23,7 @@ export function DashboardEmptyState({
       <div className="mx-auto max-w-md space-y-2">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <p className="text-sm leading-relaxed text-foreground">{description}</p>
         ) : null}
       </div>
       {children ? <div className="mt-6 flex flex-wrap items-center justify-center gap-2">{children}</div> : null}

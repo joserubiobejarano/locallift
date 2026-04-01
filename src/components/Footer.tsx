@@ -1,6 +1,24 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Footer() {
+  const pathname = usePathname();
+  const isDemoPage = pathname === "/demo";
+
+  if (isDemoPage) {
+    return (
+      <footer className="border-t mt-auto">
+        <div className="container mx-auto px-4 py-8">
+          <p className="text-center text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} LocalLift. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="border-t mt-auto">
       <div className="container mx-auto px-4 py-8">
@@ -42,4 +60,3 @@ export function Footer() {
     </footer>
   );
 }
-

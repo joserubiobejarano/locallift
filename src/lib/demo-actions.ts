@@ -15,5 +15,5 @@ export async function createDemoSession() {
     path: "/",
   });
 
-  redirect("/dashboard?demo=1");
+  redirect("/demo");
 }

@@ -28,7 +28,7 @@ It includes a free audit funnel, a demo mode, and a subscription-based plan.
 #### A) Authentication & User Management
 - ✅ Email/password authentication
 - ✅ Google OAuth login (for app access, NOT GBP connection)
-- ✅ Secure session management with Supabase
+- ✅ Secure session management with Auth.js (NextAuth v5) and Neon-backed users
 - ✅ User profiles with business information
 
 #### B) Dashboard & Navigation
@@ -473,8 +473,8 @@ Here's the exact sequence to follow next:
 
 ### Backend
 - **Next.js API Routes**
-- **Supabase** (Auth + DB + RLS)
-- **PostgreSQL** database
+- **Auth.js** (NextAuth v5) for authentication
+- **Neon Postgres** for data
 
 ### Integrations
 - **Google Business Profile API**
@@ -559,6 +559,6 @@ Here's the exact sequence to follow next:
 
 ---
 
-**Last Updated**: November 29, 2024  
-**Current Focus**: Phase 3 - Google Business Profile UI Wiring (70% Complete)  
-**Next Priority**: Complete GBP UI integration (Settings + Reviews pages)
+**Last Updated**: April 2026  
+**Current Focus**: Phase 3 – GBP polish, demo limits, pre-launch QA  
+**Next Priority**: Demo mode polish, plan-gating verification, production observability

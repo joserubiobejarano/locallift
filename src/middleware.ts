@@ -16,19 +16,35 @@ function isProtectedAppPage(pathname: string): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/** Paths that skip the GBP gate when ALLOW_DASHBOARD_WITHOUT_GBP is set (dev / preview). */
+function isGbpDevBypassPath(pathname: string): boolean {
+  const prefixes = ["/dashboard", "/reviews", "/settings"];
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
 /** Logged-in app areas that require GBP before access (not /connect). */
-function needsGbpBeforeAccess(pathname: string): boolean {
+function needsGbpBeforeAccess(
+  pathname: string,
+  allowDevBypassWithoutGbp: boolean
+): boolean {
+  if (allowDevBypassWithoutGbp && isGbpDevBypassPath(pathname)) {
+    return false;
+  }
   const prefixes = ["/dashboard", "/reviews", "/content", "/audit", "/settings"];
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+function readAllowDashboardWithoutGbp(): boolean {
+  const v = process.env.ALLOW_DASHBOARD_WITHOUT_GBP?.trim().toLowerCase();
+  return v === "true" || v === "1" || v === "yes";
+}
+
 export default auth(async (req) => {
-  const { pathname, searchParams } = req.nextUrl;
+  const { pathname } = req.nextUrl;
   const sessionUser = req.auth?.user;
 
   const demoCookie = req.cookies.get("ll_demo")?.value === "true";
-  const demoParam = searchParams.get("demo") === "1";
-  const isDemoMode = !sessionUser && (demoCookie || demoParam);
+  const isDemoMode = !sessionUser && demoCookie;
 
   const requestHeaders = new Headers(req.headers);
   if (isDemoMode) {
@@ -64,6 +80,8 @@ export default auth(async (req) => {
   }
 
   const userId = sessionUser?.id;
+  const allowDevBypassWithoutGbp = readAllowDashboardWithoutGbp();
+
   if (userId && !pathname.startsWith("/api")) {
     try {
       const hasGbp = await userHasGbpConnection(userId);
@@ -78,7 +96,7 @@ export default auth(async (req) => {
         );
       }
 
-      if (needsGbpBeforeAccess(pathname) && !hasGbp) {
+      if (needsGbpBeforeAccess(pathname, allowDevBypassWithoutGbp) && !hasGbp) {
         return NextResponse.redirect(new URL("/connect", getAppBaseUrl(req)), 302);
       }
     } catch (e) {

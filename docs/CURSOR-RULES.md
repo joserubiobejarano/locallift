@@ -20,7 +20,7 @@ Anything that is frontend related must have the same look and feel as the Homepa
 ## Security Rules
 - Security is the top priority of the project, so with every change we need to make sure that we are not opening any doors to security threads.
 - We need to make sure that all users are locked up in their respective tiers and they are not able to change features or tiers by changing the url's or stuff like that.
-- Always implement secure authentication (JWT, OAuth2, etc.) and data protection practices (TLS, AES-256).
+- Always implement secure authentication (Auth.js sessions, OAuth2 where used) and data protection practices (TLS, hashing for passwords, least-privilege DB access).
 - Include robust error handling, input validation, and logging consistent with the architecture's security guidelines.
 
 ## Organization Rules

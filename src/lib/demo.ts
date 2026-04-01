@@ -1,16 +1,11 @@
-export function isDemoModeFromSearchParams(searchParams: URLSearchParams): boolean {
-  return searchParams.get("demo") === "1";
-}
-
 export function isDemoModeFromCookie(): boolean {
   if (typeof window === "undefined") return false;
   return document.cookie.includes("ll_demo=true");
 }
 
-export function isDemoMode(searchParams?: URLSearchParams): boolean {
-  const fromCookie = isDemoModeFromCookie();
-  const fromParams = searchParams ? isDemoModeFromSearchParams(searchParams) : false;
-  return fromCookie || fromParams;
+/** Demo session is indicated only by the `ll_demo` cookie (set by demo entry flow). */
+export function isDemoMode(): boolean {
+  return isDemoModeFromCookie();
 }
 
 // Demo usage limits

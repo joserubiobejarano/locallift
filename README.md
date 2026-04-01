@@ -22,10 +22,10 @@ LocalLift helps local businesses:
 
 ### 🔐 Authentication System
 - Email/password signup and login
-- Google OAuth for app access
-- Secure session management with Supabase
-- User profiles with business information
-- Auth callback handling for OAuth
+- Google OAuth for app access (Auth.js / NextAuth v5)
+- Secure cookie-based sessions
+- User records in Postgres (`public.users`) with profiles
+- Registration and sign-out API routes
 
 ### 📝 Content Generator
 - **Blog posts** – Hyper-local, neighborhood-focused
@@ -41,6 +41,7 @@ LocalLift helps local businesses:
 - **Unlimited replies** – No limits on review responses
 - **Review history** – Track all reviews and replies
 - **Platform-specific tones** – Adjust tone per platform
+- **GBP** – Location selector, sync, drafts/posting workflow (see Settings for auto-reply toggle)
 
 ### 🔍 Profile Audit Tool
 - **AI-powered audits** – Comprehensive GBP analysis
@@ -50,8 +51,8 @@ LocalLift helps local businesses:
 - **Demo version** – Available in demo mode
 
 ### 🎭 Demo Mode
-- **Dedicated `/demo` route** – Creates demo session and redirects to dashboard
-- **Cookie + query param** – `?demo=1` or `ll_demo` cookie
+- **Dedicated `/demo` route** – Live demo with sample reviews (sets `ll_demo` cookie for sandbox API behavior when not logged in)
+- **Cookie** – `ll_demo` cookie (no `?demo=1` query flag)
 - **Middleware** – Injects `x-demo` header; blocks OAuth and auth APIs in demo
 - **Fake data** – Sample reviews, locations, audits, usage metrics
 - **Full functionality** – Generate content and replies in sandbox (with limits)
@@ -64,15 +65,15 @@ LocalLift helps local businesses:
 - **Customer portal** – Manage subscription, payment methods
 - **Plan gating** – Enforce limits, upgrade prompts (UpgradeBanner, UpgradeModal, PlanGate)
 
-### 🔌 Google Business Profile Integration (Backend Complete)
-- **OAuth connection** – Secure GBP account linking
-- **Connection status** – `GET /api/google/connection` to check if connected
-- **Location syncing** – Sync all GBP locations; list via `/api/google/locations` and `/api/google/locations/list`
+### 🔌 Google Business Profile Integration
+- **OAuth connection** – Secure GBP account linking (separate redirect from app login)
+- **Connection status** – `GET /api/google/connection`
+- **Location syncing** – `POST /api/google/locations/sync`; list endpoints for UI
 - **Review syncing** – Pull reviews from GBP
-- **Reply posting** – Post replies directly to GBP
+- **Reply posting** – Post replies directly to GBP (when enabled / plan allows)
 - **Token management** – Automatic token refresh
-- **Disconnect** – `POST /api/google/disconnect`
-- **UI in progress** – Settings and Reviews pages need polish (see [Still Pending](#-still-pending))
+- **Disconnect** – `POST /api/google/disconnect` and UI control
+- **Settings** – Locations list, reply tone, auto-reply-all toggle, sync actions
 
 ### 📊 Dashboard & Metrics
 - **Overview** – 2×2 grid: reviews this month, content this month, audits this month, usage (posts/audits used vs limit)
@@ -88,10 +89,10 @@ LocalLift helps local businesses:
 ### 🏗️ Infrastructure
 - **Next.js 16** with App Router
 - **React 19**, TypeScript
-- **Supabase** – Auth, database, Row Level Security
-- **Stripe** – Complete payment processing
+- **Neon Postgres** – Serverless driver; schema in `neon/migrations/`
+- **Auth.js (NextAuth v5)** – Authentication
+- **Stripe** – Payment processing
 - **OpenAI** – GPT-4o-mini with custom local SEO agent
-- **PostgreSQL** – Robust database schema
 - **Middleware** – Demo mode detection and header injection
 
 ---
@@ -110,8 +111,7 @@ LocalLift helps local businesses:
 
 ## 🚧 Still Pending
 
-- **GBP UI wiring** – Settings: show connected GBP email, list of locations, “Disconnect Google” button, auto-sync toggle. Reviews: location selector, “Sync reviews now” button, status badges, loading/error states.
-- **Demo mode polish** – Top “You’re in demo mode” banner, stricter demo limits (e.g. 3 replies, 2 posts), disable “Post to Google” in demo, signup CTA after limits.
+- **Demo mode polish** – Stricter demo limits, clearer “Post to Google” behavior in demo, signup CTA after limits (banner exists in dashboard layout; tune copy/limits).
 - **Audit funnel** – Layout and CTA on free-audit results, social proof, conversion optimization.
 - **Dashboard analytics** – Trend cards (vs last month), simple charts (e.g. usage over time).
 - **Plan gating verification** – Ensure posting, content, and audit limits and upgrade CTAs are consistent everywhere.
@@ -127,7 +127,7 @@ See [docs/NEXT_STEPS.md](./docs/NEXT_STEPS.md) and [docs/ROADMAP.md](./docs/ROAD
 ### Prerequisites
 
 - Node.js 18+ and npm/yarn/pnpm
-- Supabase account and project
+- [Neon](https://neon.tech) (or compatible Postgres) and `DATABASE_URL`
 - OpenAI API key
 - Google Cloud project with Business Profile API enabled (for GBP features)
 - Stripe account (for payments)
@@ -143,43 +143,34 @@ cd Agent-LocalLift
 2. Install dependencies
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-3. Set up environment variables
-```bash
-cp .env.example .env.local
-```
-
-Fill in your environment variables (see [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md) for details):
+3. Create `.env.local` and set variables (see [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md)). Minimally:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
 
-OPENAI_API_KEY=your_openai_api_key
+AUTH_SECRET=your_random_secret
+AUTH_URL=http://localhost:3000
 
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-# Redirect URI is typically NEXT_PUBLIC_APP_URL + /api/google/oauth/callback
+OPENAI_API_KEY=sk-...
+
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-STRIPE_SECRET_KEY=your_stripe_secret_key
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_WEBHOOK_SECRET=your_webhook_secret
-STRIPE_PRICE_STARTER=price_xxxxx
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_STARTER_PRICE_ID=price_...
 ```
 
-4. Run database migrations
-```bash
-# Using Supabase CLI
-supabase migration up
-```
+4. Apply database migrations on Neon (SQL Editor or `psql`), **in order**:
+
+- `neon/migrations/001_initial.sql`
+- `neon/migrations/002_auto_reply_profiles.sql`
+
+See [neon/README.md](./neon/README.md).
 
 5. Start the development server
 ```bash
@@ -194,39 +185,29 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```
 Agent-LocalLift/
+├── neon/migrations/             # Canonical Postgres schema
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/              # Auth routes (login, signup)
-│   │   ├── (dashboard)/         # Protected dashboard
-│   │   │   ├── dashboard/       # Overview & usage
-│   │   │   ├── content/         # Content generation
-│   │   │   ├── reviews/         # Reviews management
-│   │   │   ├── audit/           # Profile audit
-│   │   │   └── settings/        # Settings & billing
+│   │   ├── (auth)/              # login, signup
+│   │   ├── (dashboard)/         # dashboard, content, reviews, audit, settings
 │   │   ├── api/
-│   │   │   ├── openai/          # Content & review-reply generation
-│   │   │   ├── google/          # GBP OAuth, locations, reviews, replies, disconnect, connection
-│   │   │   ├── stripe/          # Checkout, portal, webhook
-│   │   │   ├── audit/           # Profile audit, free-profile (lead audit)
-│   │   │   ├── auth/            # signout, set
-│   │   │   ├── dashboard/       # summary
-│   │   │   ├── leads/           # Lead capture
-│   │   │   ├── projects/       # Content projects CRUD
-│   │   │   └── reviews/        # Manual review CRUD
-│   │   ├── demo/                # Demo mode entry
-│   │   ├── free-audit/          # Free audit landing
-│   │   ├── pricing/             # Pricing page
-│   │   ├── feedback/            # Feedback form
-│   │   ├── contact/             # Contact
-│   │   ├── legal/               # Legal hub
-│   │   ├── privacy/             # Privacy policy
-│   │   ├── terms/               # Terms of service
-│   │   └── auth/callback/       # OAuth callback
-│   ├── components/              # React components (UI, marketing, UpgradeModal, etc.)
-│   └── lib/                     # Utils, Supabase, auth, OpenAI, Stripe, Google, plan, usage, demo
-├── supabase/
-│   └── migrations/
-├── docs/                        # ROADMAP, NEXT_STEPS, ARCHITECTURE, ENVIRONMENT_VARIABLES, etc.
+│   │   │   ├── auth/            # NextAuth [...nextauth], register, signout
+│   │   │   ├── openai/
+│   │   │   ├── google/
+│   │   │   ├── stripe/
+│   │   │   ├── audit/
+│   │   │   ├── dashboard/
+│   │   │   ├── leads/
+│   │   │   ├── projects/
+│   │   │   ├── reviews/
+│   │   │   └── settings/
+│   │   ├── demo/
+│   │   ├── free-audit/
+│   │   ├── pricing/
+│   │   └── …                    # legal, contact, feedback, etc.
+│   ├── components/
+│   └── lib/                     # db (Neon), auth helpers, OpenAI, Stripe, Google, demo, plan, usage
+├── docs/
 └── public/
 ```
 
@@ -234,27 +215,26 @@ Agent-LocalLift/
 
 ## 🗄️ Database Schema
 
-### Core Tables
-- `profiles` – User profiles, business info, usage counters (`ai_posts_used`, `audits_used`, `usage_reset_date`), plan fields
-- `projects` – Generated content (blogs, posts, FAQs)
-- `subscriptions` – Stripe subscription mirror
-- `user_billing` – Billing information
-- `leads` – Free-audit leads (with `converted`, `converted_at` for conversion tracking)
+### Core
+- `users` – Accounts (email, password hash, OAuth fields)
+- `profiles` – Business info, plan, usage counters, reply settings, `auto_reply_all_reviews`
+- `projects` – Generated content
+- `subscriptions`, `user_billing` – Stripe mirror
+- `leads` – Free-audit leads (`converted`, `converted_at`)
 
-### Google Business Profile Tables
-- `gbp_connections` – Connected Google accounts
-- `gbp_locations` – Synced business locations
-- `reviews` – Reviews from Google and other platforms
-- `review_replies` – Generated and posted replies
+### Google Business Profile
+- `gbp_connections`, `gbp_locations`, `automation_prefs`
+- `reviews`, `review_replies`
+
+Full DDL: [`neon/migrations/001_initial.sql`](./neon/migrations/001_initial.sql).
 
 ---
 
 ## 🔒 Security
 
-- Row Level Security (RLS) enabled on Supabase tables
-- User authentication required for dashboard routes
-- API routes protected with server-side auth (and demo checks where applicable)
-- Sensitive keys in environment variables only
+- **Application-layer authorization** – API routes use the Auth.js session and scope data by `user_id` (no Postgres RLS in this stack).
+- **Dashboard routes** require a signed-in user (and respect demo mode where applicable).
+- **Secrets** only in server environment variables; never commit `.env.local`.
 
 ---
 
@@ -265,7 +245,7 @@ See [docs/ROADMAP.md](./docs/ROADMAP.md) for full phases and future features.
 **Current status**
 - ✅ **Phase 1**: Core Product (100% Complete)
 - ✅ **Phase 2**: Monetization & Billing (100% Complete)
-- 🚧 **Phase 3**: Google Business Profile (backend 100%, UI ~70%)
+- 🚧 **Phase 3**: Google Business Profile (backend complete; UI and automation polish ongoing)
 
 **Next steps**  
 See [docs/NEXT_STEPS.md](./docs/NEXT_STEPS.md) for the developer checklist.
@@ -302,11 +282,11 @@ npm start
 - `POST /api/openai/review-reply` – Generate review reply
 
 ### Google Business Profile
-- `GET /api/google/oauth/start` – Start OAuth flow
-- `GET /api/google/oauth/callback` – OAuth callback
-- `GET /api/google/connection` – Check if user has GBP connected
-- `GET /api/google/locations` – Get connected locations
-- `GET /api/google/locations/list` – List locations (for dropdowns etc.)
+- `GET /api/google/oauth/start` – Start GBP OAuth flow
+- `GET /api/google/oauth/callback` – GBP OAuth callback
+- `GET /api/google/connection` – Connection status
+- `GET /api/google/locations` – Locations payload for UI
+- `GET /api/google/locations/list` – List locations
 - `POST /api/google/locations/sync` – Sync locations from GBP
 - `POST /api/google/reviews/sync` – Sync reviews for a location
 - `POST /api/google/replies` – Post a reply to a review
@@ -320,19 +300,18 @@ npm start
 - `GET /api/dashboard/summary` – Dashboard summary data
 - `POST /api/leads` – Submit lead (e.g. free-audit)
 
-### Reviews
-- `GET /api/reviews` – Get user’s reviews
-- `POST /api/reviews` – Create manual review entry
+### Reviews & settings
+- `GET/POST /api/reviews` – List/create reviews (and related routes as implemented)
+- `GET/PUT /api/settings/reply` – Reply profile / auto-reply preference
 
 ### Projects
-- `GET /api/projects` – List projects
-- `POST /api/projects` – Create project
+- `GET/POST /api/projects` – List/create projects
 - `GET /api/projects/[id]` – Get project
-- (Update/delete as implemented)
 
 ### Auth
+- `GET/POST /api/auth/[...nextauth]` – NextAuth (sign-in callbacks, session)
+- `POST /api/auth/register` – Email/password registration
 - `POST /api/auth/signout` – Sign out
-- `POST /api/auth/set` – Set session (e.g. post-OAuth)
 
 ### Stripe
 - `POST /api/stripe/checkout` – Create checkout session
@@ -361,7 +340,8 @@ Proprietary – All rights reserved
 
 Built with:
 - [Next.js](https://nextjs.org) – React framework
-- [Supabase](https://supabase.com) – Backend as a service
+- [Neon](https://neon.tech) – Serverless Postgres
+- [Auth.js](https://authjs.dev) – Authentication for Next.js
 - [OpenAI](https://openai.com) – AI content generation
 - [Stripe](https://stripe.com) – Payment processing
 - [Tailwind CSS](https://tailwindcss.com) – Styling

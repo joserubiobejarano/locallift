@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   DashboardCallout,
@@ -13,159 +11,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { nativeSelectClassName } from "@/lib/form-controls";
-import { demoLocations, demoReviews } from "@/lib/demo-data";
 import { useCurrentPlan } from "@/lib/use-current-plan";
 import { isPaidUser, isTrialing } from "@/lib/plan";
-import {
-  isDemoModeFromSearchParams,
-  DEMO_LIMITS,
-  DEMO_STORAGE_KEYS,
-  incrementDemoUsage,
-  checkDemoLimit
-} from "@/lib/demo";
 import { UpgradeBanner, PlanGateModal } from "@/components/PlanGate";
-import { UpgradeModal } from "@/components/UpgradeModal";
 import { toast } from "sonner";
+import { ReviewList } from "@/components/reviews/review-list";
+import {
+  getReviewWorkflowDisplay,
+  shouldShowTestWorkflowActions,
+  type Review,
+  type ReviewApiRow,
+} from "@/components/reviews/review-workflow";
 
 type Location = { name: string; title?: string };
 
-type Review = {
-  google_review_id: string;
-  reviewer_name?: string;
-  star_rating?: number | null;
-  comment?: string | null;
-  status: string;
-  review_update_time?: string | null;
-  isSample?: boolean;
-};
-
-type ReviewWorkflow = "unanswered" | "unsaved_draft" | "draft_saved" | "posted";
-
-type WorkflowBadgeConfig = {
-  label: string;
-  variant: "default" | "secondary" | "destructive" | "outline";
-  className?: string;
-};
-
-function getReviewWorkflowDisplay(
-  review: Review,
-  draftText: string,
-  savedSnapshots: Record<string, string>,
-  isDemo: boolean
-): { workflow: ReviewWorkflow; badge: WorkflowBadgeConfig } {
-  const id = review.google_review_id;
-  const isPosted = review.status.toLowerCase() === "replied";
-  const inTestContext = Boolean(review.isSample || isDemo);
-
-  if (isPosted) {
-    return {
-      workflow: "posted",
-      badge: {
-        label: inTestContext ? "Posted (test mode)" : "Replied",
-        variant: "secondary",
-        className:
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100",
-      },
-    };
+function mapSyncError(raw: unknown): string {
+  if (raw && typeof raw === "object" && "error" in raw && typeof raw.error === "string") {
+    const msg = raw.error.toLowerCase();
+    if (msg.includes("location not found")) return "No locations were found for this account.";
+    if (msg.includes("no google connection")) return "Google connection failed. Please try again.";
+    return raw.error;
   }
-
-  const trimmed = draftText.trim();
-  if (!trimmed) {
-    return {
-      workflow: "unanswered",
-      badge: {
-        label: "Unanswered",
-        variant: "outline",
-        className: "text-muted-foreground",
-      },
-    };
-  }
-
-  const saved = savedSnapshots[id];
-  if (saved !== undefined && saved === draftText) {
-    return {
-      workflow: "draft_saved",
-      badge: {
-        label: "Draft saved",
-        variant: "secondary",
-        className:
-          "border-sky-500/40 bg-sky-500/10 text-sky-950 dark:text-sky-100",
-      },
-    };
-  }
-
-  return {
-    workflow: "unsaved_draft",
-    badge: {
-      label: "Unsaved draft",
-      variant: "outline",
-      className:
-        "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-100",
-    },
-  };
-}
-
-function shouldShowTestWorkflowActions(review: Review, isDemo: boolean): boolean {
-  return Boolean(review.isSample || isDemo);
-}
-
-/** Sample reviews for testing the reply workflow when no real reviews exist. */
-function buildSampleReviews(): Review[] {
-  const now = Date.now();
-  const day = 24 * 60 * 60 * 1000;
-  return [
-    {
-      google_review_id: "sample-review-1",
-      reviewer_name: "Sarah Mitchell",
-      star_rating: 5,
-      comment: "Amazing service and super friendly staff. Will definitely come back!",
-      status: "unanswered",
-      review_update_time: new Date(now - 2 * day).toISOString(),
-      isSample: true,
-    },
-    {
-      google_review_id: "sample-review-2",
-      reviewer_name: "Daniel Perez",
-      star_rating: 4,
-      comment: "Great food and nice atmosphere. Service was a little slow but overall a good experience.",
-      status: "unanswered",
-      review_update_time: new Date(now - 5 * day).toISOString(),
-      isSample: true,
-    },
-    {
-      google_review_id: "sample-review-3",
-      reviewer_name: "Laura Chen",
-      star_rating: 3,
-      comment: "The place is nice but the wait time was quite long.",
-      status: "unanswered",
-      review_update_time: new Date(now - 7 * day).toISOString(),
-      isSample: true,
-    },
-    {
-      google_review_id: "sample-review-4",
-      reviewer_name: "Mark Thompson",
-      star_rating: 2,
-      comment: "Not very happy with the experience. The order took forever and the staff seemed overwhelmed.",
-      status: "unanswered",
-      review_update_time: new Date(now - 10 * day).toISOString(),
-      isSample: true,
-    },
-  ];
+  return "Review sync failed. Please try again.";
 }
 
 function ReviewsPageContent() {
-  const searchParams = useSearchParams();
-  const isDemo = isDemoModeFromSearchParams(searchParams);
   const { planStatus, planInfo } = useCurrentPlan();
   const hasPaidAccess = isPaidUser(planStatus) || isTrialing(planStatus);
   const [showPlanGateModal, setShowPlanGateModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const NO_CONNECTED_MSG =
-    "No connected Google Business Profile yet. You can still test the workflow with sample reviews.";
+    "No connected Google Business Profile yet. Connect your account to load locations and reviews.";
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLoc, setSelectedLoc] = useState<string>("");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -176,64 +54,45 @@ function ReviewsPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [autoReplyAllReviews, setAutoReplyAllReviews] = useState(false);
 
-  function mapSyncError(raw: unknown): string {
-    if (raw && typeof raw === "object" && "error" in raw && typeof raw.error === "string") {
-      const msg = raw.error.toLowerCase();
-      if (msg.includes("location not found")) return "No locations were found for this account.";
-      if (msg.includes("no google connection")) return "Google connection failed. Please try again.";
-      return raw.error;
-    }
-    return "Review sync failed. Please try again.";
-  }
-
-  // Load locations on mount (real mode only)
   useEffect(() => {
-    if (!isDemo) {
-      loadLocations();
-    } else {
-      // In demo mode, use demo locations
-      if (demoLocations.length > 0 && !selectedLoc) {
-        setSelectedLoc(demoLocations[0].location_name);
-      }
-    }
-  }, [isDemo]);
+    let cancelled = false;
+    void fetch("/api/settings/reply")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { autoReplyAllReviews?: boolean } | null) => {
+        if (!cancelled && d && typeof d.autoReplyAllReviews === "boolean") {
+          setAutoReplyAllReviews(d.autoReplyAllReviews);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Load locations on mount
+  useEffect(() => {
+    void loadLocations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only location bootstrap
+  }, []);
 
   // Load reviews when location changes
   useEffect(() => {
-    if (isDemo && selectedLoc) {
-      const demoReviewsData = demoReviews(selectedLoc);
-      setReviews(
-        demoReviewsData.map((r) => ({
-          google_review_id: r.google_review_id,
-          reviewer_name: r.reviewer_name,
-          star_rating: r.star_rating,
-          comment: r.comment,
-          status: r.status,
-        }))
-      );
-      const nextDrafts: Record<string, string> = {};
-      const nextSaved: Record<string, string> = {};
-      for (const r of demoReviewsData) {
-        if (r.reply_comment) {
-          nextDrafts[r.google_review_id] = r.reply_comment;
-          if (r.status === "replied") {
-            nextSaved[r.google_review_id] = r.reply_comment;
-          }
-        }
-      }
-      setDrafts(nextDrafts);
-      setSavedDraftSnapshots(nextSaved);
-    } else if (!isDemo && selectedLoc) {
+    if (selectedLoc) {
       setDrafts({});
       setSavedDraftSnapshots({});
-      loadReviews();
+      void loadReviews();
     } else {
       setReviews([]);
       setDrafts({});
       setSavedDraftSnapshots({});
     }
-  }, [isDemo, selectedLoc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tied to selected location only
+  }, [selectedLoc]);
+
+  function handleConnectGoogle() {
+    window.location.href = "/api/google/oauth/start";
+  }
 
   async function loadLocations() {
     setLoading(true);
@@ -265,37 +124,6 @@ function ReviewsPageContent() {
   async function syncReviews() {
     if (!selectedLoc) return;
 
-    if (isDemo) {
-      // Demo mode: just show a toast and reload demo data
-      setSyncing(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const demoReviewsData = demoReviews(selectedLoc);
-      setReviews(
-        demoReviewsData.map((r) => ({
-          google_review_id: r.google_review_id,
-          reviewer_name: r.reviewer_name,
-          star_rating: r.star_rating,
-          comment: r.comment,
-          status: r.status,
-        }))
-      );
-      const nextDrafts: Record<string, string> = {};
-      const nextSaved: Record<string, string> = {};
-      for (const r of demoReviewsData) {
-        if (r.reply_comment) {
-          nextDrafts[r.google_review_id] = r.reply_comment;
-          if (r.status === "replied") {
-            nextSaved[r.google_review_id] = r.reply_comment;
-          }
-        }
-      }
-      setDrafts(nextDrafts);
-      setSavedDraftSnapshots(nextSaved);
-      setSyncing(false);
-      toast.success("Reviews refreshed (demo)");
-      return;
-    }
-
     setSyncing(true);
     setError(null);
     try {
@@ -312,7 +140,43 @@ function ReviewsPageContent() {
 
       // Reload reviews after sync
       await loadReviews();
-      toast.success("Reviews synced successfully");
+
+      let message = "Reviews synced successfully.";
+      if (hasPaidAccess) {
+        try {
+          const processRes = await fetch("/api/google/reviews/process-pending", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locationName: selectedLoc }),
+          });
+          if (processRes.ok) {
+            const pj = (await processRes.json()) as {
+              posted?: number;
+              drafted?: number;
+              autoHandled?: number;
+              errors?: string[];
+            };
+            await loadReviews();
+            const autoN =
+              typeof pj.autoHandled === "number" && pj.autoHandled > 0 ? pj.autoHandled : 0;
+            if (autoN > 0) {
+              message = `${autoN} review${autoN === 1 ? "" : "s"} automatically handled`;
+            } else {
+              const bits: string[] = [];
+              if (typeof pj.drafted === "number" && pj.drafted > 0) {
+                bits.push(`${pj.drafted} saved as drafts`);
+              }
+              if (bits.length) message += ` ${bits.join(", ")}.`;
+            }
+            if (Array.isArray(pj.errors) && pj.errors.length > 0) {
+              toast.warning("Some reviews could not be processed. Try again or post manually.");
+            }
+          }
+        } catch {
+          /* keep base success message */
+        }
+      }
+      toast.success(message);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Review sync failed. Please try again.";
       setError(message);
@@ -334,7 +198,24 @@ function ReviewsPageContent() {
       }
       const js = await res.json();
       if (Array.isArray(js.items)) {
-        setReviews(js.items);
+        const items = js.items as ReviewApiRow[];
+        const nextDrafts: Record<string, string> = {};
+        for (const it of items) {
+          if (typeof it.draft_reply === "string" && it.draft_reply.trim()) {
+            nextDrafts[it.google_review_id] = it.draft_reply;
+          }
+        }
+        setDrafts(nextDrafts);
+        setReviews(
+          items.map((it) => ({
+            google_review_id: it.google_review_id,
+            reviewer_name: it.reviewer_name,
+            star_rating: it.star_rating,
+            comment: it.comment,
+            status: it.status,
+            isSample: it.isSample,
+          }))
+        );
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load reviews");
@@ -344,13 +225,6 @@ function ReviewsPageContent() {
   }
 
   async function generate(review: Review) {
-    if (isDemo) {
-      if (checkDemoLimit(DEMO_STORAGE_KEYS.REPLIES_USED, DEMO_LIMITS.REPLIES)) {
-        setShowUpgradeModal(true);
-        return;
-      }
-    }
-
     const body = review.isSample
       ? {
           businessName: "My Business",
@@ -367,7 +241,6 @@ function ReviewsPageContent() {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...(isDemo ? { "x-demo": "true" } : {}),
       ...(review.isSample ? { "x-sample-review": "true" } : {}),
     };
 
@@ -393,26 +266,67 @@ function ReviewsPageContent() {
     const replyText = j.reply ?? j.markdown ?? j.text ?? "";
     setDrafts((d) => ({ ...d, [review.google_review_id]: replyText }));
 
-    if (isDemo) {
-      incrementDemoUsage(DEMO_STORAGE_KEYS.REPLIES_USED);
-      toast.success(
-        "Reply generated. Review the text below, then save as draft when ready. (Demo usage tracked)"
-      );
-    } else if (review.isSample) {
+    if (review.isSample) {
       toast.success(
         "Reply generated. Review below, save as draft, then mark as posted (test mode) when final."
       );
     } else {
-      toast.success("Reply generated. Edit if needed, then post to Google when ready.");
+      if (!selectedLoc) {
+        toast.error("Select a location before saving or posting a reply.");
+        return;
+      }
+      try {
+        if (autoReplyAllReviews && hasPaidAccess) {
+          const pr = await fetch("/api/google/replies", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reviewId: review.google_review_id,
+              locationName: selectedLoc,
+              reply: replyText,
+            }),
+          });
+          if (pr.ok) {
+            setSavedDraftSnapshots((s) => ({ ...s, [review.google_review_id]: replyText }));
+            await loadReviews();
+            toast.success("Reply generated and posted to Google.");
+          } else {
+            const dr = await fetch("/api/reviews/draft", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reviewId: review.google_review_id, reply: replyText }),
+            });
+            if (dr.ok) {
+              setSavedDraftSnapshots((s) => ({ ...s, [review.google_review_id]: replyText }));
+            }
+            toast.success(
+              "Reply generated. Could not post to Google — saved as draft. Edit or post manually when ready."
+            );
+          }
+        } else {
+          const dr = await fetch("/api/reviews/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reviewId: review.google_review_id, reply: replyText }),
+          });
+          if (!dr.ok) {
+            toast.error("Reply generated but could not save draft. Try again.");
+            return;
+          }
+          setSavedDraftSnapshots((s) => ({ ...s, [review.google_review_id]: replyText }));
+          toast.success(
+            autoReplyAllReviews && !hasPaidAccess
+              ? "Reply generated and saved as draft. Upgrade to post replies to Google automatically."
+              : "Reply generated and saved as draft."
+          );
+        }
+      } catch {
+        toast.error("Could not save or post reply. Try again.");
+      }
     }
   }
 
   async function post(review: Review) {
-    if (isDemo) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
     const reply = drafts[review.google_review_id];
     if (!reply?.trim() || !selectedLoc) {
       toast.error("Write or generate a reply before posting.");
@@ -438,7 +352,7 @@ function ReviewsPageContent() {
   }
 
   function saveTestDraft(review: Review) {
-    if (!shouldShowTestWorkflowActions(review, isDemo)) return;
+    if (!shouldShowTestWorkflowActions(review, false)) return;
     const text = drafts[review.google_review_id] ?? "";
     if (!text.trim()) {
       toast.error("Nothing to save yet — generate a reply or type your draft first.");
@@ -454,7 +368,7 @@ function ReviewsPageContent() {
   }
 
   function markAsPostedTest(review: Review) {
-    if (!shouldShowTestWorkflowActions(review, isDemo)) return;
+    if (!shouldShowTestWorkflowActions(review, false)) return;
     const reply = drafts[review.google_review_id];
     if (!reply?.trim()) {
       toast.error("Add or generate a reply first.");
@@ -470,12 +384,12 @@ function ReviewsPageContent() {
       [review.google_review_id]: reply,
     }));
     toast.success(
-      "Marked as posted (test mode). This review is handled — no further action needed for the demo."
+      "Marked as posted (test mode). This review is handled — no further action needed for this test session."
     );
   }
 
   const isSampleMode = reviews.length > 0 && reviews.every((r) => r.isSample);
-  const displayLocations = isDemo ? demoLocations.map((l) => ({ name: l.location_name, title: l.title })) : locations;
+  const displayLocations = locations;
   const hasRealLocations = locations.length > 0;
 
   // Keep one sample review expanded; default to first when list changes
@@ -486,7 +400,7 @@ function ReviewsPageContent() {
     } else {
       setExpandedId(null);
     }
-  }, [isSampleMode, reviews.length, reviews[0]?.google_review_id]);
+  }, [isSampleMode, reviews]);
 
   const isNoConnectedOnly = error === NO_CONNECTED_MSG;
 
@@ -496,61 +410,56 @@ function ReviewsPageContent() {
     let posted = 0;
     for (const rv of reviews) {
       const draftText = drafts[rv.google_review_id] ?? "";
-      const { workflow } = getReviewWorkflowDisplay(rv, draftText, savedDraftSnapshots, isDemo);
+      const { workflow } = getReviewWorkflowDisplay(rv, draftText, savedDraftSnapshots, false);
       if (workflow === "unanswered") unanswered += 1;
       else if (workflow === "posted") posted += 1;
       else draftsActive += 1;
     }
     return { total: reviews.length, unanswered, drafts: draftsActive, posted };
-  }, [reviews, drafts, savedDraftSnapshots, isDemo]);
+  }, [reviews, drafts, savedDraftSnapshots]);
 
   return (
     <DashboardPage width="md" className="space-y-8">
       <DashboardPageHeader
         title="Reviews"
-        description="Sync reviews from Google Business Profile, draft AI replies, then save drafts or post to Google — same workflow as on Overview."
+        description="Sync reviews from Google Business Profile, we generate the replies and post them to Google or save them in drafts."
       />
 
       <div className="space-y-3">
-        {!hasRealLocations && !isDemo && !loading && (
+        {!hasRealLocations && !loading && (
           <DashboardCallout
             variant="neutral"
             action={
-              <Button asChild variant="outline" size="sm">
-                <Link href="/settings">Go to Settings</Link>
+              <Button type="button" size="sm" onClick={handleConnectGoogle}>
+                Connect Google Business Profile
               </Button>
             }
           >
-            <p className="text-muted-foreground">
+            <p className="text-foreground">
               Connect Google Business Profile and sync locations in Settings to load your review inbox.
-            </p>
-          </DashboardCallout>
-        )}
-
-        {isDemo && (
-          <DashboardCallout variant="neutral">
-            <p className="text-muted-foreground">
-              Demo mode — you are viewing sample data. Connect your Google account in Settings to see
-              your real reviews.
             </p>
           </DashboardCallout>
         )}
 
         {isSampleMode && (
           <DashboardCallout variant="neutral" title="Test mode — sample reviews">
-            <p className="text-muted-foreground">
+            <p className="text-foreground">
+              This is a demo. In live mode, replies are posted to your Google Business Profile
+              automatically.
+            </p>
+            <p className="text-foreground mt-2">
               Sample reviews for internal testing. These are not live Google reviews.
             </p>
           </DashboardCallout>
         )}
 
-        {planInfo && hasPaidAccess && !isDemo && (
+        {planInfo && hasPaidAccess && (
           <UpgradeBanner planStatus={planStatus} currentPeriodEnd={planInfo.currentPeriodEnd} />
         )}
 
         {error && isNoConnectedOnly && (
           <DashboardCallout variant="neutral">
-            <p className="text-muted-foreground">{error}</p>
+            <p className="text-foreground">{error}</p>
           </DashboardCallout>
         )}
         {error && !isNoConnectedOnly && (
@@ -577,14 +486,14 @@ function ReviewsPageContent() {
 
         <Button
           onClick={() => {
-            if (!hasPaidAccess && !isDemo) {
+            if (!hasPaidAccess) {
               setShowPlanGateModal(true);
               return;
             }
             syncReviews();
           }}
           disabled={!selectedLoc || syncing || loading}
-          title={isDemo ? "Demo mode - click to refresh sample data" : (!hasPaidAccess ? "Premium feature" : undefined)}
+          title={!hasPaidAccess ? "Premium feature" : undefined}
         >
           {syncing ? "Syncing..." : "Sync reviews now"}
         </Button>
@@ -592,7 +501,7 @@ function ReviewsPageContent() {
 
       {reviews.length > 0 && (
         <div
-          className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-foreground"
           aria-live="polite"
         >
           <span className="font-semibold text-foreground">Summary</span>
@@ -612,7 +521,7 @@ function ReviewsPageContent() {
       )}
 
       {loading && reviews.length === 0 && (
-        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center text-sm text-muted-foreground shadow-sm">
+        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center text-sm text-foreground shadow-sm">
           <p>Loading reviews…</p>
         </div>
       )}
@@ -620,241 +529,54 @@ function ReviewsPageContent() {
       {!loading && reviews.length === 0 && (
         <DashboardEmptyState
           title="No reviews yet"
-          description="You can connect a Google Business Profile or load sample reviews to test the reply workflow."
+          description="Connect Google Business Profile, then sync locations in Settings to load your review inbox."
         >
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setDrafts({});
-              setSavedDraftSnapshots({});
-              setReviews(buildSampleReviews());
-            }}
-          >
-            Load sample reviews
+          <Button type="button" onClick={handleConnectGoogle}>
+            Connect Google Business Profile
           </Button>
         </DashboardEmptyState>
       )}
 
-      <div className="space-y-4">
-        {reviews.map((rv) => {
-          const draftText = drafts[rv.google_review_id] ?? "";
-          const { workflow, badge } = getReviewWorkflowDisplay(
-            rv,
-            draftText,
-            savedDraftSnapshots,
-            isDemo
-          );
-          const isHandled = workflow === "posted";
-          const showTestActions = shouldShowTestWorkflowActions(rv, isDemo);
-          const showTestModeHandledNote =
-            isHandled && (rv.isSample || isDemo);
-
-          const isExpanded = !isSampleMode || expandedId === rv.google_review_id;
-          if (isSampleMode && !isExpanded) {
-            const preview = (rv.comment ?? "").slice(0, 80);
-            return (
-              <button
-                key={rv.google_review_id}
-                type="button"
-                onClick={() => setExpandedId(rv.google_review_id)}
-                className={cn(
-                  "w-full rounded-xl border p-4 text-left shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  isHandled
-                    ? "border-emerald-500/35 bg-emerald-500/[0.06] hover:bg-emerald-500/10"
-                    : "border-border bg-card hover:bg-muted/40"
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                      <span className="font-medium text-foreground">{rv.reviewer_name ?? "Anonymous"}</span>
-                      <span className="text-muted-foreground">
-                        {typeof rv.star_rating === "number" ? `${rv.star_rating}★` : "—"}
-                      </span>
-                      {rv.review_update_time && (
-                        <span className="text-muted-foreground text-xs">
-                          {new Date(rv.review_update_time).toLocaleDateString()}
-                        </span>
-                      )}
-                      <Badge variant={badge.variant} className={cn("text-[10px]", badge.className)}>
-                        {badge.label}
-                      </Badge>
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground truncate">
-                      {preview}
-                      {preview.length >= 80 ? "…" : ""}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">Click to expand</span>
-                </div>
-              </button>
-            );
+      <ReviewList
+        reviews={reviews}
+        drafts={drafts}
+        savedDraftSnapshots={savedDraftSnapshots}
+        isDemo={false}
+        isSampleMode={isSampleMode}
+        expandedId={expandedId}
+        onExpandedIdChange={setExpandedId}
+        onDraftChange={(reviewId, text) =>
+          setDrafts((d) => ({ ...d, [reviewId]: text }))
+        }
+        onGenerate={(rv) => {
+          if (!hasPaidAccess && !rv.isSample) {
+            setShowPlanGateModal(true);
+            return;
           }
-          return (
-            <div
-              key={rv.google_review_id}
-              className={cn(
-                "rounded-xl border border-border bg-card p-5 space-y-4 shadow-sm transition-colors",
-                isHandled &&
-                  "border-emerald-500/40 bg-emerald-500/[0.05] shadow-none"
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                    <span className="font-medium text-foreground">{rv.reviewer_name ?? "Anonymous"}</span>
-                    <span className="text-muted-foreground">
-                      {typeof rv.star_rating === "number" ? `${rv.star_rating}★` : "—"}
-                    </span>
-                    {rv.review_update_time && (
-                      <span className="text-muted-foreground">
-                        {new Date(rv.review_update_time).toLocaleDateString()}
-                      </span>
-                    )}
-                    <Badge variant={badge.variant} className={cn("text-xs", badge.className)}>
-                      {badge.label}
-                    </Badge>
-                    {isDemo && (
-                      <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                        demo
-                      </Badge>
-                    )}
-                    {rv.isSample && (
-                      <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                        Sample
-                      </Badge>
-                    )}
-                  </div>
-                  {showTestModeHandledNote && (
-                    <p className="text-xs text-emerald-800 dark:text-emerald-200/90">
-                      Handled for this demo — reply area is locked. Use &quot;Load sample reviews&quot; or refresh to reset.
-                    </p>
-                  )}
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap">{rv.comment}</p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  {isSampleMode && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground"
-                      onClick={() => setExpandedId(null)}
-                    >
-                      Collapse
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="text-xs font-medium text-muted-foreground">Draft reply</label>
-                  {workflow === "unsaved_draft" && !isHandled && (
-                    <span className="text-[10px] text-amber-700 dark:text-amber-200/90">
-                      Not saved yet — click Save draft to pin this version
-                    </span>
-                  )}
-                  {workflow === "draft_saved" && !isHandled && (
-                    <span className="text-[10px] text-sky-800 dark:text-sky-200/90">
-                      Draft saved — edit anytime, or mark as posted when final
-                    </span>
-                  )}
-                </div>
-                <Textarea
-                  value={draftText}
-                  onChange={(e) =>
-                    setDrafts((d) => ({ ...d, [rv.google_review_id]: e.target.value }))
-                  }
-                  placeholder={
-                    showTestActions ? "Edit your reply (test mode)" : "Your reply will be posted to Google"
-                  }
-                  className="min-h-[80px] resize-y"
-                  readOnly={isHandled}
-                  aria-readonly={isHandled}
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                <Button
-                  onClick={() => {
-                    if (!hasPaidAccess && !isDemo && !rv.isSample) {
-                      setShowPlanGateModal(true);
-                      return;
-                    }
-                    generate(rv);
-                  }}
-                  title={!hasPaidAccess && !isDemo && !rv.isSample ? "Premium feature" : undefined}
-                  disabled={isHandled}
-                >
-                  Generate reply
-                </Button>
-                {showTestActions && (
-                  <Button
-                    variant="outline"
-                    size="default"
-                    onClick={() => saveTestDraft(rv)}
-                    disabled={isHandled || !draftText.trim()}
-                  >
-                    Save draft
-                  </Button>
-                )}
-                {showTestActions ? (
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    onClick={() => markAsPostedTest(rv)}
-                    disabled={isHandled || !draftText.trim()}
-                    className="text-muted-foreground"
-                  >
-                    Mark as posted (test mode)
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (!hasPaidAccess && !isDemo) {
-                        setShowPlanGateModal(true);
-                        return;
-                      }
-                      post(rv);
-                    }}
-                    disabled={isHandled || !draftText.trim() || isDemo}
-                    title={isDemo ? "Posting disabled in demo mode" : undefined}
-                  >
-                    Post to Google
-                  </Button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+          void generate(rv);
+        }}
+        onPost={(rv) => {
+          if (!hasPaidAccess) {
+            setShowPlanGateModal(true);
+            return;
+          }
+          void post(rv);
+        }}
+        onSaveTestDraft={saveTestDraft}
+        onMarkPostedTest={markAsPostedTest}
+        hasPaidAccess={hasPaidAccess}
+      />
 
       <PlanGateModal
         open={showPlanGateModal}
         onOpenChange={setShowPlanGateModal}
         featureName="Syncing reviews from Google Business Profile, AI reply drafts, and posting replies"
       />
-
-      <UpgradeModal
-        open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        description={isDemo ? "You've reached the demo limit for AI reply drafts. Start your free trial for full review inbox access." : undefined}
-      />
     </DashboardPage>
   );
 }
 
 export default function ReviewsPage() {
-  return (
-    <Suspense
-      fallback={
-        <DashboardPage width="md">
-          <DashboardPageHeader title="Reviews" description="Loading…" />
-        </DashboardPage>
-      }
-    >
-      <ReviewsPageContent />
-    </Suspense>
-  );
+  return <ReviewsPageContent />;
 }
 

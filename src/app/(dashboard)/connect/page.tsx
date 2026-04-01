@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -30,24 +31,29 @@ function ConnectContent() {
   }
 
   return (
-    <DashboardPage width="sm" className="space-y-6">
+    <DashboardPage width="sm" className="flex flex-col items-center space-y-6">
       <DashboardPageHeader
-        title="Start by connecting your business"
-        description="Link your Google Business Profile so we can sync your locations and reviews. You only need to do this once."
+        align="center"
+        title="Reply to your Google reviews in seconds"
+        description="Try sample reviews right away, or connect Google Business Profile to sync your real locations and inbox."
       />
 
       {error && (
-        <DashboardCallout variant="error">
+        <DashboardCallout variant="error" className="w-full text-center">
           <p>{error}</p>
         </DashboardCallout>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-          We use Google&apos;s secure sign-in to access your Business Profile data. After you
-          connect, you&apos;ll land on your overview dashboard.
-        </p>
-        <Button type="button" size="lg" className="w-full sm:w-auto" onClick={handleConnectGoogle}>
+      <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-center">
+        <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+          <Link href="/demo">Try with sample reviews</Link>
+        </Button>
+        <Button
+          type="button"
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={handleConnectGoogle}
+        >
           Connect Google Business Profile
         </Button>
       </div>
@@ -59,7 +65,7 @@ export default function ConnectPage() {
   return (
     <Suspense
       fallback={
-        <DashboardPage width="sm">
+        <DashboardPage width="sm" className="text-center">
           <p className="text-sm text-muted-foreground">Loading…</p>
         </DashboardPage>
       }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Sparkles, ArrowRight, Check } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatingDots } from "./FloatingDots";
 
@@ -40,7 +40,7 @@ export function HeroSection() {
               className="bg-[#F97316] hover:bg-[#EA580C] text-white"
               asChild
             >
-              <Link href="/login?demo=1">Try the Demo</Link>
+              <Link href="/demo">Try the Demo</Link>
             </Button>
           </div>
         </motion.div>

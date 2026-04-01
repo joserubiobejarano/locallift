@@ -75,7 +75,7 @@ export function PlanGateModal({ open, onOpenChange, featureName = "this feature"
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Link href="/settings#billing">
