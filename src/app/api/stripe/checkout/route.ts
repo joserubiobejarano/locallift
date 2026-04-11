@@ -7,7 +7,7 @@ import { sql } from "@/lib/db/neon";
 
 export async function POST(request: Request) {
   try {
-    const priceId = process.env.STRIPE_STARTER_PRICE_ID;
+    const priceId = process.env.STRIPE_PRICE_STARTER;
     if (!priceId) return NextResponse.json({ error: "Stripe price ID not configured" }, { status: 500 });
 
     const appUrl = getServerAppUrl();

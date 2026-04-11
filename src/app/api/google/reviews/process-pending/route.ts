@@ -11,7 +11,7 @@ import { getUserPlan } from "@/lib/plan-server";
 import { getProfileReplyDefaults } from "@/lib/reply-profile-defaults";
 import {
   generateReplyForReviewRow,
-  persistReplyPostedLocally,
+  postReplyToGoogleAndPersist,
   saveReplyDraft,
   type ReviewRowForReply,
 } from "@/lib/review-reply-server";
@@ -91,10 +91,9 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      /** MVP: auto-reply simulates “posted” in-app only (no Google API on sync). */
-      const shouldSimulateAutoPost = autoReply && canPost;
-      if (shouldSimulateAutoPost) {
-        const res = await persistReplyPostedLocally(user.id, row.google_review_id, reply);
+      const shouldAutoPost = autoReply && canPost;
+      if (shouldAutoPost) {
+        const res = await postReplyToGoogleAndPersist(user.id, row.google_review_id, locationName, reply);
         if (res.ok) {
           autoHandled += 1;
         } else {
