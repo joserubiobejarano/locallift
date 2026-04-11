@@ -6,12 +6,17 @@ import { getGoogleGbpOAuthRedirectUri, googleAuthUrl } from "@/lib/google";
 import { resolveUser } from "@/lib/user-from-req";
 import { getServerAppUrl } from "@/lib/env";
 import { buildGoogleOAuthState } from "@/lib/google-oauth-state";
-
-// MVP: paid-plan gating for GBP connect removed for dev testing; restore getUserPlan + canUseGoogleConnection if needed.
+import { getUserPlan } from "@/lib/plan-server";
+import { canUseGoogleConnection } from "@/lib/plan";
 
 export async function GET(req: Request) {
   const user = await resolveUser(req);
   if (!user) return NextResponse.redirect(new URL("/login", getServerAppUrl()));
+
+  const plan = await getUserPlan(user.id);
+  if (!canUseGoogleConnection(plan)) {
+    return NextResponse.redirect(new URL("/pricing", getServerAppUrl()));
+  }
 
   const state = buildGoogleOAuthState(user.id);
   const url = googleAuthUrl(state);

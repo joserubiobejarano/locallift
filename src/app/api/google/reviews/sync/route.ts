@@ -8,8 +8,8 @@ import { googleFetch } from "@/lib/google";
 
 import { sql } from "@/lib/db/neon";
 import { demoReviews } from "@/lib/demo-data";
-
-// MVP: paid-plan gating removed for GBP review sync; restore getUserPlan + canUseReviewAutomation if needed.
+import { getUserPlan } from "@/lib/plan-server";
+import { canUseReviewAutomation } from "@/lib/plan";
 
 export async function POST(req: NextRequest) {
   const isDemo = req.headers.get("x-demo") === "true";
@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const plan = await getUserPlan(user.id);
+  if (!canUseReviewAutomation(plan)) {
+    return NextResponse.json({ error: "Review sync requires a paid plan" }, { status: 403 });
+  }
 
   const { locationName } = await req.json();
 

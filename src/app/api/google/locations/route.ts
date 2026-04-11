@@ -5,8 +5,8 @@ import { resolveUser } from "@/lib/user-from-req";
 import { googleFetch } from "@/lib/google";
 
 import { sql } from "@/lib/db/neon";
-
-// MVP: paid-plan gating removed for GBP location fetch; restore getUserPlan + canUseGoogleConnection if needed.
+import { getUserPlan } from "@/lib/plan-server";
+import { canUseGoogleConnection } from "@/lib/plan";
 
 export const runtime = "nodejs";
 
@@ -17,6 +17,11 @@ export async function GET(req: NextRequest) {
   const user = await resolveUser(req);
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const plan = await getUserPlan(user.id);
+  if (!canUseGoogleConnection(plan)) {
+    return NextResponse.json({ error: "Google Business Profile access requires a paid plan" }, { status: 403 });
+  }
 
   try {
     const r = await googleFetch(user.id, LIST_URL);

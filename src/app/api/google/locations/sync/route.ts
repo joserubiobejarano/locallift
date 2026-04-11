@@ -8,8 +8,8 @@ import { sql } from "@/lib/db/neon";
 import { updateGbpTokens } from "@/lib/db/gbp";
 import { resolveUser } from "@/lib/user-from-req";
 import { demoLocations } from "@/lib/demo-data";
-
-// MVP: paid-plan gating removed for GBP location sync; restore getUserPlan + canUseGoogleConnection if needed.
+import { getUserPlan } from "@/lib/plan-server";
+import { canUseGoogleConnection } from "@/lib/plan";
 
 type ConnRow = {
   access_token: string;
@@ -28,6 +28,11 @@ export async function POST(req: Request) {
 
   const user = await resolveUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const plan = await getUserPlan(user.id);
+  if (!canUseGoogleConnection(plan)) {
+    return NextResponse.json({ error: "Google Business Profile access requires a paid plan" }, { status: 403 });
+  }
 
   const connRows = await sql`
     SELECT access_token, refresh_token, expires_at, scope
