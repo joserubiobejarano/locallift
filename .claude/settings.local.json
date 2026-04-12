@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/joser/Desktop/Projects/Ornigami/Ornigami-Agents/Agent-LocalLift/src/app/api/*/*.ts)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
