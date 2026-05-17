@@ -50,20 +50,42 @@ export default async function BillingPage() {
           const status = statusByAgent.get(agent.id) ?? "inactive";
           const hasAccess = status === "active" || status === "trialing";
           const isComingSoon = agent.id === "speed_to_lead";
+          const stateClasses = isComingSoon
+            ? "border-slate-200 bg-slate-50/60"
+            : hasAccess
+              ? "border-emerald-300 bg-emerald-50/70"
+              : "border-amber-300 bg-amber-50/70";
 
           return (
-            <Card key={agent.id} className="shadow-sm">
+            <Card key={agent.id} className={`shadow-sm transition-colors ${stateClasses}`}>
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>{agent.name}</CardTitle>
-                  <Badge variant={hasAccess ? "default" : "secondary"}>
-                    {isComingSoon ? "Coming soon" : status}
-                  </Badge>
+                  {isComingSoon ? (
+                    <Badge className="border border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-100">
+                      Coming soon
+                    </Badge>
+                  ) : hasAccess ? (
+                    <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge className="border border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100">
+                      Inactive
+                    </Badge>
+                  )}
                 </div>
                 <CardDescription>{agent.shortDescription}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-slate-700">Monthly price: {MONTHLY_PRICES[agent.id]}</div>
+                <div className="space-y-1 text-sm">
+                  <p className="text-slate-700">Monthly price: {MONTHLY_PRICES[agent.id]}</p>
+                  {!isComingSoon ? (
+                    <p className={hasAccess ? "font-medium text-emerald-800" : "font-medium text-amber-900"}>
+                      {hasAccess ? "This agent is active for your business." : "This agent is currently inactive."}
+                    </p>
+                  ) : null}
+                </div>
                 {isComingSoon ? (
                   <Button disabled variant="outline">
                     Coming soon

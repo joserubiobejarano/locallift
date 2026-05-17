@@ -181,7 +181,7 @@ async function ensureBusinessDefaults(businessId: string, userId: string): Promi
 
 export async function ensureDefaultBusinessAgents(businessId: string): Promise<void> {
   const defaults: ReadonlyArray<{ agentId: string; status: string }> = [
-    { agentId: "review_replies", status: "active" },
+    { agentId: "review_replies", status: "inactive" },
     { agentId: "review_booster", status: "inactive" },
     { agentId: "speed_to_lead", status: "inactive" },
   ];

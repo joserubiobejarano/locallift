@@ -31,6 +31,7 @@ export default async function ReviewBoosterPage() {
   if (!hasAccess) {
     return (
       <AgentActivationPlaceholder
+        agentId="review_booster"
         agentName="Review Booster"
         description="Post-visit review request automations."
       />

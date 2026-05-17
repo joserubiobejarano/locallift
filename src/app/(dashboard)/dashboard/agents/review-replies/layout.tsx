@@ -1,9 +1,10 @@
+import { ReactNode } from "react";
+
 import { AgentActivationPlaceholder } from "@/components/dashboard/agent-activation-placeholder";
 import { requireUser } from "@/lib/auth";
 import { canAccessAgent, getOrCreateBusinessForUser } from "@/lib/db/businesses";
-import ReviewBoosterNewVisitPagePlaceholder from "@/modules/review-booster/pages/new-visit-page";
 
-export default async function ReviewBoosterNewPage() {
+export default async function ReviewRepliesLayout({ children }: { children: ReactNode }) {
   const session = await requireUser();
   let business;
   try {
@@ -17,16 +18,16 @@ export default async function ReviewBoosterNewPage() {
     }
   }
 
-  const hasAccess = await canAccessAgent(business.id, "review_booster");
+  const hasAccess = await canAccessAgent(business.id, "review_replies");
   if (!hasAccess) {
     return (
       <AgentActivationPlaceholder
-        agentId="review_booster"
-        agentName="Review Booster"
-        description="Post-visit review request automations."
+        agentId="review_replies"
+        agentName="Review Replies"
+        description="Handle and respond to your Google reviews."
       />
     );
   }
 
-  return <ReviewBoosterNewVisitPagePlaceholder />;
+  return <>{children}</>;
 }

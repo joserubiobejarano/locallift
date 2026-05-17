@@ -5,6 +5,7 @@ import { ReactNode, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 
 import { DashboardCallout, DashboardTopNav } from "@/components/dashboard";
+import { DashboardUserMenu } from "@/components/dashboard/user-menu";
 import { Button } from "@/components/ui/button";
 
 function readDemoCookie(): boolean {
@@ -47,8 +48,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-dvh flex flex-col">
       {!isConnectGate && (
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <div className="mx-auto flex max-w-5xl items-center justify-center px-4 py-3 lg:px-8">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-2 px-4 py-3 lg:px-8">
+            <div className="h-10 w-10" aria-hidden="true" />
             <DashboardTopNav className="w-full justify-center" />
+            <div className="justify-self-end">
+              <DashboardUserMenu />
+            </div>
           </div>
         </header>
       )}
