@@ -11,21 +11,21 @@ const agents = [
     description: "AI drafts for every Google review",
     href: "/review-replies",
     icon: MessageSquare,
-    gradient: "from-purple-500 to-sky-400",
+    gradient: "bg-slate-700",
   },
   {
     name: "Review Booster",
     description: "Turn customers into 5-star reviewers",
     href: "/review-booster",
     icon: Star,
-    gradient: "from-orange-400 to-pink-500",
+    gradient: "bg-emerald-600",
   },
   {
     name: "Local SEO Content",
     description: "Blogs, posts and FAQs for your city",
     href: "/local-seo",
     icon: FileText,
-    gradient: "from-emerald-400 to-teal-500",
+    gradient: "bg-amber-600",
   },
 ];
 
@@ -49,10 +49,10 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-orange-400">
-            <span className="text-xs font-bold text-white">LL</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900">
+            <span className="text-xs font-bold text-white">OR</span>
           </div>
-          <span className="text-base font-semibold tracking-tight text-slate-900">LocalLift</span>
+          <span className="text-base font-semibold tracking-tight text-slate-900">Ornigami</span>
         </Link>
 
         {/* Desktop nav */}
@@ -90,7 +90,7 @@ export function Header() {
                       className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50"
                     >
                       <div
-                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${agent.gradient}`}
+                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${agent.gradient}`}
                       >
                         <agent.icon className="h-3.5 w-3.5 text-white" />
                       </div>
@@ -106,7 +106,7 @@ export function Header() {
                       onClick={() => setProductsOpen(false)}
                       className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
                     >
-                      <span>â†.</span> Try live demo with sample data
+                      <span>{">"}</span> Try live demo with sample data
                     </Link>
                   </div>
                 </motion.div>
@@ -114,18 +114,6 @@ export function Header() {
             </AnimatePresence>
           </div>
 
-          <Link
-            href="/pricing"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="/free-audit"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-          >
-            Free audit
-          </Link>
         </nav>
 
         {/* Desktop actions */}
@@ -138,7 +126,7 @@ export function Header() {
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-105"
+            className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800"
           >
             Try it free
           </Link>
@@ -180,29 +168,14 @@ export function Header() {
                   className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50"
                 >
                   <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${agent.gradient}`}
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${agent.gradient}`}
                   >
                     <agent.icon className="h-3.5 w-3.5 text-white" />
                   </div>
                   <span className="text-sm font-medium text-slate-700">{agent.name}</span>
                 </Link>
               ))}
-              <div className="border-t border-slate-100 pt-2">
-                <Link
-                  href="/pricing"
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="/free-audit"
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  Free audit
-                </Link>
-              </div>
+              <div className="border-t border-slate-100 pt-2" />
               <div className="flex flex-col gap-2 border-t border-slate-100 pt-2">
                 <Link
                   href="/login"
@@ -214,7 +187,7 @@ export function Header() {
                 <Link
                   href="/signup"
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-3 py-2.5 text-center text-sm font-semibold text-white"
+                  className="block rounded-full bg-slate-900 px-3 py-2.5 text-center text-sm font-semibold text-white"
                 >
                   Try it free
                 </Link>

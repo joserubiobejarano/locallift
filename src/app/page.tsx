@@ -28,7 +28,7 @@ const agents = [
       "Our AI monitors your Google inbox and drafts personalized, on-brand replies. Approve in one click , or let it run automatically.",
     href: "/review-replies",
     icon: MessageSquare,
-    gradient: "from-purple-500 to-sky-400",
+    gradient: "bg-slate-700",
     lightBg: "bg-purple-50",
     lightBorder: "border-purple-100",
     bullets: ["Full review inbox, one clean view", "AI replies that sound like you", "Post directly to Google"],
@@ -40,7 +40,7 @@ const agents = [
       "After every visit, Review Booster sends a friendly follow-up asking for feedback. More reviews, more trust, higher Google rankings.",
     href: "/review-booster",
     icon: Star,
-    gradient: "from-orange-400 to-pink-500",
+    gradient: "bg-emerald-600",
     lightBg: "bg-orange-50",
     lightBorder: "border-orange-100",
     bullets: ["Automatic follow-up after each visit", "Smart timing for maximum response rate", "Track every campaign in real time"],
@@ -52,7 +52,7 @@ const agents = [
       "Blog posts, Google updates, and FAQ ideas written for your exact city, niche, and customer base , ready to publish in minutes.",
     href: "/local-seo",
     icon: FileText,
-    gradient: "from-emerald-400 to-teal-500",
+    gradient: "bg-amber-600",
     lightBg: "bg-emerald-50",
     lightBorder: "border-emerald-100",
     bullets: ["Hyper-local blog drafts", "Google Business Profile posts", "FAQ ideas from real search data"],
@@ -64,19 +64,19 @@ const steps = [
     number: "01",
     title: "Connect your Google Business Profile",
     body: "Link your profile in a few clicks. No technical setup, no spreadsheets , just sign in and we take it from there.",
-    gradient: "from-purple-500 to-sky-400",
+    gradient: "bg-slate-700",
   },
   {
     number: "02",
     title: "We learn your tone and sync your reviews",
     body: "Our AI reads your business info and past reviews to understand your voice. Your review inbox syncs automatically.",
-    gradient: "from-orange-400 to-pink-500",
+    gradient: "bg-emerald-600",
   },
   {
     number: "03",
-    title: "Three agents handle the rest",
+    title: "Your agent hub handles the execution",
     body: "Replies go out, follow-ups get sent, content stays fresh. You stay in control and approve anything before it goes live.",
-    gradient: "from-emerald-400 to-teal-500",
+    gradient: "bg-amber-600",
   },
 ];
 
@@ -85,14 +85,14 @@ const testimonials = [
     name: "Marta Ruiz",
     role: "Owner",
     business: "BurgerMat Â· Madrid",
-    text: "Before LocalLift, I'd reply to reviews from my phone between orders. Now every review gets a thoughtful answer without me staying up late.",
+    text: "Before Ornigami, I'd reply to reviews from my phone between orders. Now every review gets a thoughtful answer without me staying up late.",
     stars: 5,
   },
   {
     name: "Dr. Alex Carter",
     role: "Clinic manager",
     business: "Smiles & Co Dental Â· London",
-    text: "We get a lot of anxious patients reading our reviews first. LocalLift helps us answer fast and keep the tone warm and professional.",
+    text: "We get a lot of anxious patients reading our reviews first. Ornigami helps us answer fast and keep the tone warm and professional.",
     stars: 5,
   },
   {
@@ -106,8 +106,8 @@ const testimonials = [
 
 const faqs = [
   {
-    q: "Do I need a website to use LocalLift?",
-    a: "No. LocalLift works even if you only have a Google Business Profile. Connect your profile and we'll start replying to reviews and generating content right away.",
+    q: "Do I need a website to use Ornigami?",
+    a: "No. Ornigami works even if you only have a Google Business Profile. Connect your profile and we'll start replying to reviews and generating content right away.",
   },
   {
     q: "Will the AI replies sound like my brand?",
@@ -122,7 +122,7 @@ const faqs = [
     a: "Review Booster sends a short follow-up message to customers after their visit, asking them to leave a review on Google. You log the visit (or upload a CSV), and the agent handles the outreach.",
   },
   {
-    q: "Will LocalLift post anything without my approval?",
+    q: "Will Ornigami post anything without my approval?",
     a: "No. Everything is approve-first by default. You see the draft, make any edits, and decide what goes live. Automation is opt-in.",
   },
   {
@@ -217,7 +217,7 @@ function ReviewInboxMockup() {
         </div>
 
         {/* Stats footer */}
-        <div className="border-t border-slate-100 bg-gradient-to-r from-purple-50 via-white to-orange-50 px-4 py-3">
+        <div className="border-t border-slate-100 bg-slate-50 px-4 py-3">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-slate-500">This week</span>
             <div className="flex gap-4">
@@ -300,7 +300,7 @@ function ReviewBoosterMockup() {
           </div>
           <span className="ml-1 text-xs text-slate-400">Review Booster</span>
         </div>
-        <button className="rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-2.5 py-1 text-[10px] font-semibold text-white">
+        <button className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white">
           â–¶ Run campaign
         </button>
       </div>
@@ -419,9 +419,9 @@ export default function HomePage() {
                 transition={{ duration: 0.5, delay: 0.08 }}
                 className="text-balance text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl"
               >
-                Your local reputation,{" "}
-                <span className="bg-gradient-to-r from-purple-600 via-fuchsia-500 to-orange-500 bg-clip-text text-transparent">
-                  on autopilot
+                A smarter way to run{" "}
+                <span className="text-slate-900">
+                  your local growth
                 </span>
               </motion.h1>
 
@@ -431,7 +431,7 @@ export default function HomePage() {
                 transition={{ duration: 0.5, delay: 0.16 }}
                 className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600"
               >
-                Three AI agents that reply to your Google reviews, generate new ones from happy customers, and keep your profile fully optimized , so you show up first and win more business.
+                Ornigami gives you an evolving hub of specialized agents for reviews, reputation, and local visibility, so your team can execute faster without losing brand control.
               </motion.p>
 
               <motion.div
@@ -442,7 +442,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/signup"
-                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200/70 transition-all hover:brightness-105 hover:shadow-orange-200"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200/70 transition-all hover:brightness-105 hover:shadow-orange-200"
                 >
                   Try it free
                   <ArrowRight className="h-4 w-4" />
@@ -503,7 +503,7 @@ export default function HomePage() {
               The platform
             </p>
             <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-              Three agents. One platform.
+              An agent hub for local growth.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
               Each agent handles a specific part of your local presence, running automatically in the background while you focus on your business.
@@ -522,7 +522,7 @@ export default function HomePage() {
                 className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div
-                  className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${agent.gradient}`}
+                  className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900`}
                 >
                   <agent.icon className="h-5 w-5 text-white" />
                 </div>
@@ -573,7 +573,7 @@ export default function HomePage() {
 
           <div className="relative grid gap-8 md:grid-cols-3">
             {/* Connector line (desktop) */}
-            <div className="absolute left-[16.66%] right-[16.66%] top-8 hidden h-px bg-gradient-to-r from-purple-200 via-orange-200 to-emerald-200 md:block" />
+            <div className="absolute left-[16.66%] right-[16.66%] top-8 hidden h-px bg-slate-200 md:block" />
 
             {steps.map((step, idx) => (
               <motion.div
@@ -585,7 +585,7 @@ export default function HomePage() {
                 className="relative flex flex-col items-center text-center"
               >
                 <div
-                  className={`relative mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${step.gradient} shadow-md`}
+                  className={`relative mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 shadow-md`}
                 >
                   <span className="text-lg font-bold text-white">{step.number}</span>
                 </div>
@@ -653,7 +653,7 @@ export default function HomePage() {
           </div>
 
           {/* Divider */}
-          <div className="my-20 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+          <div className="my-20 h-px bg-slate-800/70" />
 
           {/* Review Booster */}
           <div className="grid gap-12 md:grid-cols-2 md:items-center">
@@ -743,7 +743,7 @@ export default function HomePage() {
                 </div>
                 <p className="flex-1 text-sm leading-relaxed text-slate-700">&ldquo;{t.text}&rdquo;</p>
                 <div className="mt-5 flex items-center gap-3 border-t border-slate-200 pt-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-200 to-orange-200 text-xs font-semibold text-slate-700">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
                     {t.name.split(" ").map((n) => n[0]).join("")}
                   </div>
                   <div>
@@ -772,14 +772,14 @@ export default function HomePage() {
                 <MapPin className="h-3.5 w-3.5" /> Built for local business
               </div>
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                If customers find you on Google Maps, LocalLift can help
+                If customers find you on Google Maps, Ornigami helps you win them
               </h2>
               <p className="mt-4 text-slate-600">
-                Restaurants, salons, clinics, gyms, service businesses , any local business that depends on Google reviews and visibility can use LocalLift from day one.
+                Restaurants, salons, clinics, gyms, and service businesses can run Ornigami from day one.
               </p>
               <Link
                 href="/signup"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-100 transition-all hover:brightness-105"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-100 transition-all hover:brightness-105"
               >
                 Start your free trial <ArrowRight className="h-4 w-4" />
               </Link>
@@ -797,7 +797,7 @@ export default function HomePage() {
                   key={label}
                   className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5"
                 >
-                  <span className="text-lg">{emoji}</span>
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-200 text-xs font-semibold text-slate-700">{emoji}</span>
                   <span className="text-sm font-medium text-slate-700">{label}</span>
                 </div>
               ))}
@@ -840,7 +840,7 @@ export default function HomePage() {
 
       {/* â”€â”€ FINAL CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="relative overflow-hidden bg-white py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-orange-50" />
+        <div className="pointer-events-none absolute inset-0 bg-slate-100" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -852,12 +852,12 @@ export default function HomePage() {
             Ready to grow your local reputation?
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg text-slate-600">
-            Start your 7-day free trial today. No credit card, no setup fees , just three AI agents working for your business from day one.
+            Start your 7-day free trial today. No credit card, no setup fees , with an agent hub working for your business from day one.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-all hover:brightness-105"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-all hover:brightness-105"
             >
               Try it free , 7 days on us
               <ArrowRight className="h-4 w-4" />
@@ -877,5 +877,7 @@ export default function HomePage() {
     </div>
   );
 }
+
+
 
 

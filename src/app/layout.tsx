@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LocalLift â€“ Win More Local Customers",
+  title: "Ornigami - Agent Hub for Local Growth",
   description:
-    "LocalLift manages your Google Business Profile for you. Automatic review replies, weekly local content, and profile audits , so you show up higher and attract more customers.",
+    "Ornigami helps local teams run review replies, follow-ups, and local visibility workflows from one agent hub.",
 };
 
 export default function RootLayout({

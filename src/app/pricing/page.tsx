@@ -3,7 +3,7 @@ import { Header } from "@/components/marketing/Header";
 import { Check, X } from "lucide-react";
 
 export const metadata = {
-  title: "Pricing , LocalLift",
+  title: "Pricing - Ornigami",
   description: "One simple plan for local business growth. Start your 7-day free trial.",
 };
 
@@ -33,7 +33,7 @@ export default function PricingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-400 to-pink-500 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-100 transition-all hover:brightness-105"
+              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition-all hover:bg-slate-800"
             >
               Start free trial
             </Link>
@@ -53,7 +53,7 @@ export default function PricingPage() {
         <section className="mt-16">
           <div className="relative mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold text-slate-900">LocalLift Starter</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">Ornigami Starter</h2>
               <p className="mt-2 text-sm text-slate-500">
                 Everything you need to manage your Google reviews and local content.
               </p>
@@ -101,11 +101,11 @@ export default function PricingPage() {
         {/* COMPARISON */}
         <section className="mt-20">
           <h2 className="mb-8 text-center text-2xl font-bold tracking-tight text-slate-900">
-            Before and after LocalLift
+            Before and after Ornigami
           </h2>
           <div className="grid gap-5 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-              <h3 className="mb-4 text-sm font-semibold text-slate-400">Without LocalLift</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-400">Without Ornigami</h3>
               <ul className="space-y-3 text-sm text-slate-500">
                 {[
                   "Manually replying to every review",
@@ -123,7 +123,7 @@ export default function PricingPage() {
             </div>
 
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
-              <h3 className="mb-4 text-sm font-semibold text-emerald-600">With LocalLift</h3>
+              <h3 className="mb-4 text-sm font-semibold text-emerald-600">With Ornigami</h3>
               <ul className="space-y-3 text-sm text-emerald-800">
                 {[
                   "AI drafts replies to every review in seconds",
@@ -150,12 +150,12 @@ export default function PricingPage() {
           <div className="space-y-4">
             {[
               {
-                q: "Do I need a website to use LocalLift?",
-                a: "No. You can use LocalLift even if you only have a Google Business Profile. We generate Google posts, review replies, and profile audits without needing a website.",
+                q: "Do I need a website to use Ornigami?",
+                a: "No. You can use Ornigami even if you only have a Google Business Profile. We generate Google posts, review replies, and profile audits without needing a website.",
               },
               {
                 q: "Can I try it without connecting my Google account?",
-                a: "Yes. You can use the live demo with sample data, and you can run a free audit just by sharing your business profile link or name.",
+                a: "Yes. You can use the live demo with sample data before connecting your Google account.",
               },
               {
                 q: "What happens when I hit my monthly limits?",
@@ -166,7 +166,7 @@ export default function PricingPage() {
                 a: "Review Booster is an agent that sends follow-up messages to your customers after their visit, asking them to leave a Google review. You log the visit, and the agent handles the outreach.",
               },
               {
-                q: "Will LocalLift post anything without my approval?",
+                q: "Will Ornigami post anything without my approval?",
                 a: "No. Everything is approve-first by default. You see every draft before it goes live. Automation is opt-in.",
               },
               {
@@ -188,14 +188,14 @@ export default function PricingPage() {
             Not ready to commit?
           </h2>
           <p className="mt-3 text-slate-500">
-            Start with a free profile audit, then upgrade when LocalLift proves its value.
+            Start with a trial, then upgrade when Ornigami proves its value.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              href="/free-audit"
+              href="/signup"
               className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
             >
-              Run a free audit
+              Start free trial
             </Link>
             <Link
               href="/signup"

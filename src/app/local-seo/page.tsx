@@ -28,9 +28,9 @@ function ContentMockup() {
             <span className="h-3 w-3 rounded-full bg-amber-500/60" />
             <span className="h-3 w-3 rounded-full bg-emerald-500/60" />
           </div>
-          <span className="ml-2 text-xs text-slate-400">Local SEO Content , LocalLift</span>
+          <span className="ml-2 text-xs text-slate-400">Local SEO Content , Ornigami</span>
         </div>
-        <button className="rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-3 py-1 text-[10px] font-semibold text-white">
+        <button className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold text-white">
           + Generate content
         </button>
       </div>
@@ -182,7 +182,7 @@ const features = [
   },
   {
     icon: BarChart2,
-    gradient: "from-purple-500 to-fuchsia-500",
+    gradient: "bg-slate-900",
     title: "Profile audit & scoring",
     description:
       "A detailed audit of your Google Business Profile with a score and specific action steps. Know exactly what to fix to rank higher.",
@@ -252,7 +252,7 @@ export default function LocalSeoPage() {
                 className="text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl"
               >
                 Local content that{" "}
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+                <span className="text-slate-900">
                   helps you rank
                 </span>
               </motion.h1>
@@ -274,15 +274,15 @@ export default function LocalSeoPage() {
               >
                 <Link
                   href="/signup"
-                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200/70 transition-all hover:brightness-105"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200/70 transition-all hover:brightness-105"
                 >
                   Try it free <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="/free-audit"
+                  href="/signup"
                   className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50"
                 >
-                  Run a free audit
+                  Start free trial
                 </Link>
               </motion.div>
 
@@ -339,7 +339,7 @@ export default function LocalSeoPage() {
                 transition={{ duration: 0.5, delay: idx * 0.07 }}
                 className="rounded-2xl border border-slate-200 bg-white p-6"
               >
-                <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${f.gradient}`}>
+                <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900`}>
                   <f.icon className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-900">{f.title}</h3>
@@ -382,10 +382,10 @@ export default function LocalSeoPage() {
               </ul>
               <div className="mt-8 flex gap-3">
                 <Link
-                  href="/free-audit"
-                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-100 transition-all hover:brightness-105"
+                  href="/signup"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-100 transition-all hover:brightness-105"
                 >
-                  Run a free audit <ArrowRight className="h-4 w-4" />
+                  Start free trial <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </motion.div>
@@ -428,7 +428,7 @@ export default function LocalSeoPage() {
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 className="flex gap-5 rounded-2xl border border-slate-200 bg-white p-6"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-sm font-bold text-white shadow-md">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white shadow-md">
                   {step.number}
                 </div>
                 <div>
@@ -443,7 +443,7 @@ export default function LocalSeoPage() {
 
       {/* â”€â”€ CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="relative overflow-hidden bg-slate-950 py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-950/60 via-slate-950 to-teal-950/40" />
+        <div className="pointer-events-none absolute inset-0 bg-slate-900/20" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -455,28 +455,29 @@ export default function LocalSeoPage() {
             Start publishing local content that ranks
           </h2>
           <p className="mt-5 text-lg text-slate-400">
-            Businesses that post regularly on their Google profile and blog get significantly more visibility. LocalLift makes it effortless.
+            Businesses that post regularly on their Google profile and blog get significantly more visibility. Ornigami makes it effortless.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:brightness-105"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:brightness-105"
             >
               Try it free <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/free-audit"
+              href="/signup"
               className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900 px-8 py-3.5 text-sm font-semibold text-slate-300 transition-all hover:border-slate-600 hover:text-white"
             >
-              Run a free audit first
+              Start free trial first
             </Link>
           </div>
           <p className="mt-4 text-xs text-slate-600">
-            Part of LocalLift Â· $14.99/month Â· 7-day free trial
+            Part of Ornigami Â· $14.99/month Â· 7-day free trial
           </p>
         </motion.div>
       </section>
     </div>
   );
 }
+
 
